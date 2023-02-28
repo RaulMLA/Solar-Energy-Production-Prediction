@@ -1,2 +1,11 @@
-# Grupo13-Practica1
-Aprendizaje AutomáticoPráctica 1: Predicción de la producción de energía solar.
+# Aprendizaje AutomáticoPráctica 1: Predicción de la producción de energía solar.
+
+El propósito de esta primera práctica es practicar con diferentes métodos de aprendizaje automático y ajuste / optimización de hiperparámetros (HPO). Además, se trata de practicar todo el proceso: determinar el mejor método para un conjunto de datos (selección de modelo, incluido el ajuste de hiperparámetros), estimar el rendimiento futuro del mejor método (evaluación de modelo) y construir el modelo final y usarlo para hacer nuevas predicciones sobre nuevos datos (uso del modelo).<br/><br/>
+
+Hoy en día, las redes eléctricas de los países avanzados dependen cada vez más de fuentes de energía renovables no gestionable (no «despachables»), principalmente eólica y solar. Sin embargo, para integrar las fuentes de energía en la red eléctrica, se requiere que la cantidad de energía a generar se prevea con 24 horas de anticipación, de modo que las plantas de energía conectadas a la red eléctrica puedan planificarse y prepararse para satisfacer la oferta y la demanda durante el día siguiente.<br/><br/>
+
+Esto no es un problema para las fuentes de energía tradicionales (gas, petróleo, energía hidroeléctrica, ...) porque se pueden generar (gestionar) a voluntad (quemando más gas, por ejemplo). Pero las energías solar y eólica no están bajo el control del operador energético, porque dependen de la meteorología. La única alternativa es predecirlas con la mayor precisión posible. Esto se puede lograr hasta cierto punto mediante pronósticos meteorológicos, los cuales recurren a la simulación de la atmósfera mediante modelos físico-matemáticos. El Global Forecast System (GFS, EE.UU., también llamado Global Ensemble Forecast System o GEFS) y el European Centre for Medium-Range Weather Forecasts (ECMWF) son dos de los modelos de predicción numérica del tiempo (NWP: Numerical Weather Prediction) más importantes.<br/><br/>
+
+Sin embargo, aunque los NWP son muy buenos para predecir variables como «promedio de flujo radiativo de onda larga descendente en la superficie», relacionado con la radiación solar, la relación entre esas variables y la electricidad realmente producida en las plantas solares no es sencilla. Los modelos de aprendizaje automático se pueden usar para esta última tarea.<br/><br/>
+
+En particular, vamos a utilizar variables meteorológicas predichas por GFS como atributos de entrada a un modelo de aprendizaje automático que es capaz de estimar cuánta energía solar se producirá en plantas solares del estado de Oklahoma.<br/><br/>
