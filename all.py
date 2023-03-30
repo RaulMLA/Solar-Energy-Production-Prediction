@@ -327,6 +327,8 @@ print(f"Tiempo de entrenamiento: {(end - start):.5f}")
 # Predicciones del conjunto de test.
 y_pred = clf.predict(X_train_test_n)
 
+resultado_predicciones_linear_normalizada = y_pred
+
 #Desnormalizar los datos
 y_pred = scaler.inverse_transform(y_pred)
 
@@ -373,17 +375,21 @@ regr_mean = DummyRegressor(strategy="mean")
 regr_mean.fit(X_train_train_n, y_train_train_n)
 rmse_mean = np.sqrt(metrics.mean_squared_error(y_train_test_n, regr_mean.predict(X_train_test_n)))
 
+rmse_normalizado = np.sqrt(metrics.mean_squared_error(y_train_test_n, resultado_predicciones_linear_normalizada))
+
 print("\nDummy Regressor:\n")
 print(f"Error cuadrático medio del linear dummy (mean): {rmse_mean}")
-print(f"RMSE ratio linear/dummy(mean): {rmse_mean/rmse_linear}")
+print(f"RMSE ratio linear/dummy(mean): {rmse_mean/rmse_normalizado}")
 
 #Estrategy median
 regr_median = DummyRegressor(strategy="median")
 regr_median.fit(X_train_train_n, y_train_train_n)
 mae_dummy_linear = metrics.mean_absolute_error(y_train_test_n, regr_median.predict(X_train_test_n))
 
+rmse_normalizado = np.sqrt(metrics.mean_absolute_error(y_train_test_n, resultado_predicciones_linear_normalizada))
+
 print(f"\nError absoluto medio del linear dummy (median): {mae_dummy_linear}")
-print(f"MAE ratio linear/dummy(median): {mae_dummy_linear/mae_linear}")
+print(f"MAE ratio linear/dummy(median): {mae_dummy_linear/rmse_normalizado}")
 print()
 
 
@@ -577,6 +583,6 @@ print("\nRegresión lineal\n------------------")
 print("MAE sin ajustar:", mae_linear)
 print("MAE ajustado:",mae_linear_adjusted)
 print("MAE ratio linear/linear_adjusted:", mae_linear/mae_linear_adjusted)
-print("(NO VALIDO POR NORMALIZACIÓN) MAE ratio dummy/linear_adjusted:", mae_dummy_linear/mae_linear_adjusted)
+#print("(NO VALIDO POR NORMALIZACIÓN) MAE ratio dummy/linear_adjusted:", mae_dummy_linear/mae_linear_adjusted)
 
 print()
