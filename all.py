@@ -301,7 +301,7 @@ rmse_mean = np.sqrt(metrics.mean_squared_error(y_train_test, regr_mean.predict(X
 
 print("\nDummy Regressor:\n")
 print(f"Error cuadrático medio del arbol dummy (mean): {rmse_mean}")
-print(f"RMSE ratio tree/dummy(mean): {rmse_tree/rmse_mean}")
+print(f"RMSE ratio tree/dummy(mean): {rmse_mean/rmse_tree}")
 
 #Estrategy median
 regr_median = DummyRegressor(strategy="median")
@@ -309,7 +309,7 @@ regr_median.fit(X_train_train, y_train_train)
 mae_dummy_tree = metrics.mean_absolute_error(y_train_test, regr_median.predict(X_train_test))
 
 print(f"\nError absoluto medio del arbol dummy (median): {mae_dummy_tree}")
-print(f"MAE ratio tree/dummy(median): {mae_tree/mae_dummy_tree}")
+print(f"MAE ratio tree/dummy(median): {mae_dummy_tree/mae_tree}")
 
 #Regresión lineal
 print("\nRegresión lineal\n------------------")
@@ -373,9 +373,6 @@ regr_mean = DummyRegressor(strategy="mean")
 regr_mean.fit(X_train_train_n, y_train_train_n)
 rmse_mean = np.sqrt(metrics.mean_squared_error(y_train_test_n, regr_mean.predict(X_train_test_n)))
 
-#Desnormalizar el error
-rmse_mean = scaler.inverse_transform([[rmse_mean]])[0][0]
-
 print("\nDummy Regressor:\n")
 print(f"Error cuadrático medio del linear dummy (mean): {rmse_mean}")
 print(f"RMSE ratio linear/dummy(mean): {rmse_mean/rmse_linear}")
@@ -384,9 +381,6 @@ print(f"RMSE ratio linear/dummy(mean): {rmse_mean/rmse_linear}")
 regr_median = DummyRegressor(strategy="median")
 regr_median.fit(X_train_train_n, y_train_train_n)
 mae_dummy_linear = metrics.mean_absolute_error(y_train_test_n, regr_median.predict(X_train_test_n))
-
-#Desnormalizar el error
-mae_dummy_linear = scaler.inverse_transform([[mae_dummy_linear]])[0][0]
 
 print(f"\nError absoluto medio del linear dummy (median): {mae_dummy_linear}")
 print(f"MAE ratio linear/dummy(median): {mae_dummy_linear/mae_linear}")
@@ -583,6 +577,6 @@ print("\nRegresión lineal\n------------------")
 print("MAE sin ajustar:", mae_linear)
 print("MAE ajustado:",mae_linear_adjusted)
 print("MAE ratio linear/linear_adjusted:", mae_linear/mae_linear_adjusted)
-print("MAE ratio dummy/linear_adjusted:", mae_dummy_linear/mae_linear_adjusted)
+print("(NO VALIDO POR NORMALIZACIÓN) MAE ratio dummy/linear_adjusted:", mae_dummy_linear/mae_linear_adjusted)
 
 print()
