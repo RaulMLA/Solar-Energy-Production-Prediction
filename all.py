@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 # Evaluación de modelos sin ajuste de hiperparámetros.
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn import tree
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 
@@ -86,6 +86,9 @@ X = disp_df.drop('salida', axis=1)
 
 # Etiquetas.
 y = disp_df.salida
+
+# Semilla para reproducibilidad (grupo de laboratorio).
+np.random.seed(13)
 
 print()
 
@@ -215,16 +218,16 @@ print('Datos train_test: ' , X_train_test.shape, y_train_test.shape)      # 1100
 # KNN.
 print('\n[bold yellow]KNN\n----[/bold yellow]')
 
-# Entrenamiento del modelo.
+# [KNN] MODELO BASE.
+print('\n[yellow]Modelo base[/yellow]')
 base_knn = KNeighborsRegressor()
-np.random.seed(13)
 
-# Medir tiempo de entrenamiento.
+# Entrenamiento (con medición del tiempo).
 start = time.time()
 base_knn.fit(X_train_train_n, y_train_train_n)
 end = time.time()
-print(f'Tiempo de entrenamiento: {(end - start):.5f}')
-
+time_knn = end - start
+print(f'Tiempo de entrenamiento: {time_knn:.5f}')
 
 # Predicciones del conjunto de test.
 y_pred_n = base_knn.predict(X_train_test_n)
@@ -234,15 +237,17 @@ y_pred = scaler.inverse_transform(y_pred_n)
 
 # Cálculo del error cuadrático medio.
 rmse_knn = rmse(y_train_test, y_pred)
-print(f'\nError cuadrático medio del modelo KNN: {rmse_knn}')
+print(f'\nRMSE: {rmse_knn}')
 
 # Cálculo del error absoluto medio.
 mae_knn = mae(y_train_test, y_pred)
-print(f'Error absoluto medio del modelo KNN: {mae_knn}')
+print(f'MAE: {mae_knn}')
 
+
+# [KNN] MODELO VALIDACIÓN CRUZADA.
+print('\n[yellow]Modelo validación cruzada[/yellow]')
 
 # Usar predefined split para la validación cruzada.
-print('\nValidación cruzada con PredefinedSplit\n')
 
 # Número de días de entrenamiento y test.
 N_train = 7*365
@@ -251,6 +256,7 @@ N_test = 3*365
 # Crear el selector de validación cruzada.
 selector = [-1] * N_train + [0] * N_test
 
+# Crear el objeto PredefinedSplit.
 ps = PredefinedSplit(selector)
 
 '''
@@ -263,28 +269,87 @@ for train, valid in ps.split(X):
   print(f'Indices of the valid set: {valid}')
 '''
 
-# Usar el predefined split para la validación cruzada.
-rmse_knn_cv = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
-print(f'Error cuadrático medio del modelo KNN calculado con validación cruzada: {-rmse_knn_cv.mean()}')
+# Usar el predefined split para la validación cruzada (con medición del tiempo).
+cv_knn = KNeighborsRegressor()
 
-mae_knn_cv = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
-print(f'Error absoluto medio del modelo KNN calculado con validación cruzada: {-mae_knn_cv.mean()}')
+start = time.time()
+rmse_knn_cv = cross_val_score(cv_knn, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
+end = time.time()
+time1_knn_cv = end - start
+
+start = time.time()
+mae_knn_cv = cross_val_score(cv_knn, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
+end = time.time()
+time2_knn_cv = end - start
+
+print(f'Tiempo de entrenamiento (RMSE): {time1_knn_cv:.5f}')
+print(f'Tiempo de entrenamiento (MAE): {time2_knn_cv:.5f}')
+print(f'\nRMSE: {-rmse_knn_cv.mean()}')
+print(f'MAE: {-mae_knn_cv.mean()}')
+
+
+# [KNN] MODELOS DUMMY.
+print('\n[yellow]Modelos dummy[/yellow]')
+dummy_1_knn = DummyRegressor(strategy='mean')
+dummy_2_knn = DummyRegressor(strategy='median')
+
+# Entrenamiento de los modelos dummy (con medición del tiempo).
+start = time.time()
+dummy_1_knn.fit(X_train_train_n, y_train_train_n)
+end = time.time()
+time_knn_dm1 = end - start
+
+start = time.time()
+dummy_2_knn.fit(X_train_train_n, y_train_train_n)
+end = time.time()
+time_knn_dm2 = end - start
+
+print(f'Tiempo de entrenamiento (mean): {time_knn_dm1:.5f}')
+print(f'Tiempo de entrenamiento (median): {time_knn_dm2:.5f}')
+
+# Predicciones del conjunto de test.
+y_pred_dummy_1_n = dummy_1_knn.predict(X_train_test_n).reshape(-1, 1)
+y_pred_dummy_2_n = dummy_2_knn.predict(X_train_test_n).reshape(-1, 1)
+
+# Denormalizar los datos (aunque se podría RMSE y MAE sin denormalizar).
+y_pred_dummy_1 = scaler.inverse_transform(y_pred_dummy_1_n)
+y_pred_dummy_2 = scaler.inverse_transform(y_pred_dummy_2_n)
+
+# Cálculo del error cuadrático medio.
+rmse_knn_dm1 = rmse(y_train_test, y_pred_dummy_1)
+rmse_knn_dm2 = rmse(y_train_test, y_pred_dummy_2)
+print(f'\nRMSE (mean): {rmse_knn_dm1}')
+print(f'RMSE (median): {rmse_knn_dm2}')
+
+# Cálculo del error absoluto medio.
+mae_knn_dm1 = mae(y_train_test, y_pred_dummy_1)
+mae_knn_dm2 = mae(y_train_test, y_pred_dummy_2)
+print(f'MAE (mean): {mae_knn_dm1}')
+print(f'MAE (median): {mae_knn_dm2}')
+
+# Relación entre el error del modelo y el error de los modelos dummy.
+print(f'\nRMSE dummy (mean)/RMSE KNN: {rmse_knn_dm1/rmse_knn}')
+print(f'RMSE dummy (median)/RMSE KNN: {rmse_knn_dm2/rmse_knn}')
+print(f'MAE dummy (mean)/MAE KNN: {mae_knn_dm1/mae_knn}')
+print(f'MAE dummy (median)/MAE KNN: {mae_knn_dm2/mae_knn}')
+
 
 # Árbol de decisión.
 print('\n[bold yellow]Árbol de decisión\n------------------[/bold yellow]')
 
-# Entrenamiento del modelo.
-clf = tree.DecisionTreeRegressor()
-np.random.seed(13)
+# [Árbol de decisión] MODELO BASE.
+print('\n[yellow]Modelo base[/yellow]')
+base_tree = DecisionTreeRegressor()
 
-# Medir tiempo de entrenamiento.
+# Entrenamiento (con medición del tiempo).
 start = time.time()
-clf.fit(X_train_train, y_train_train)
+base_tree.fit(X_train_train, y_train_train)
 end = time.time()
-print(f'Tiempo de entrenamiento: {(end - start):.5f}')
+time_tree = end - start
+print(f'Tiempo de entrenamiento: {time_tree:.5f}')
 
 # Predicciones del conjunto de test.
-y_pred = clf.predict(X_train_test)
+y_pred = base_tree.predict(X_train_test)
 
 # Cálculo del error cuadrático medio.
 rmse_tree = rmse(y_train_test, y_pred)
@@ -294,8 +359,11 @@ print(f'\nError cuadrático medio del modelo Árbol de decisión: {rmse_tree}')
 mae_tree = mae(y_train_test, y_pred)
 print(f'Error absoluto medio del modelo Árbol de decisión: {mae_tree}')
 
+
+# [Árbol de decisión] MODELO VALIDACIÓN CRUZADA.
+print('\n[yellow]Modelo validación cruzada[/yellow]')
+
 # Usar predefined split para la validación cruzada.
-print('\nValidación cruzada con PredefinedSplit\n')
 
 '''
 print(ps.get_n_splits(X))
@@ -307,67 +375,98 @@ for train, valid in ps.split(X):
     print(f'Indices of the valid set: {valid}')
 '''
 
-# Usar el predefined split para la validación cruzada.
-clf = tree.DecisionTreeRegressor()
-np.random.seed(13)
+# Usar el predefined split para la validación cruzada (con medición del tiempo).
+cv_tree = DecisionTreeRegressor()
 
-rmse_tree_cv = cross_val_score(clf, X_train, y_train, cv=ps, scoring='neg_root_mean_squared_error')
-print(f'Error cuadrático medio del modelo Árbol de decisión calculado con validación cruzada: {-rmse_tree_cv.mean()}')
+start = time.time()
+rmse_tree_cv = cross_val_score(cv_tree, X_train, y_train, cv=ps, scoring='neg_root_mean_squared_error')
+end = time.time()
+time1_tree_cv = end - start
 
-mae_tree_cv = cross_val_score(clf, X_train, y_train, cv=ps, scoring='neg_mean_absolute_error')
-print(f'Error absoluto medio del modelo Árbol de decisión calculado con validación cruzada: {-mae_tree_cv.mean()}')
+start = time.time()
+mae_tree_cv = cross_val_score(cv_tree, X_train, y_train, cv=ps, scoring='neg_mean_absolute_error')
+end = time.time()
+time2_tree_cv = end - start
 
-# Probamos si es mejor que un dummy regressor tree.
 
-# Estrategy mean.
-regr_mean = DummyRegressor(strategy='mean')
-regr_mean.fit(X_train_train, y_train_train)
-rmse_mean = rmse(y_train_test, regr_mean.predict(X_train_test))
+print(f'Tiempo de entrenamiento: {time1_tree_cv:.5f}')
+print(f'Tiempo de entrenamiento: {time2_tree_cv:.5f}')
+print(f'\nRMSE: {-rmse_tree_cv.mean()}')
+print(f'MAE: {-mae_tree_cv.mean()}')
 
-print('\nDummy Regressor:\n')
-print(f'Error cuadrático medio del arbol dummy (mean): {rmse_mean}')
-print(f'RMSE ratio tree/dummy(mean): {rmse_mean/rmse_tree}')
 
-# Estrategy median.
-regr_median = DummyRegressor(strategy='median')
-regr_median.fit(X_train_train, y_train_train)
-mae_dummy_tree = mae(y_train_test, regr_median.predict(X_train_test))
+# [Árbol de decisión] MODELOS DUMMY.
+print('\n[yellow]Modelos dummy[/yellow]')
+dummy_1_tree = DummyRegressor(strategy='mean')
+dummy_2_tree = DummyRegressor(strategy='median')
 
-print(f'\nError absoluto medio del arbol dummy (median): {mae_dummy_tree}')
-print(f'MAE ratio tree/dummy(median): {mae_dummy_tree/mae_tree}')
+# Entrenamiento de los modelos dummy (con medición del tiempo).
+start = time.time()
+dummy_1_tree.fit(X_train_train, y_train_train)
+end = time.time()
+time_tree_dm1 = end - start
+
+start = time.time()
+dummy_2_tree.fit(X_train_train, y_train_train)
+end = time.time()
+time_tree_dm2 = end - start
+
+print(f'Tiempo de entrenamiento (mean): {time_tree_dm1:.5f}')
+print(f'Tiempo de entrenamiento (median): {time_tree_dm2:.5f}')
+
+# Predicciones del conjunto de test.
+y_pred_dummy_1 = dummy_1_tree.predict(X_train_test)
+y_pred_dummy_2 = dummy_2_tree.predict(X_train_test)
+
+# Cálculo del error cuadrático medio.
+rmse_tree_dm1 = rmse(y_train_test, y_pred_dummy_1)
+rmse_tree_dm2 = rmse(y_train_test, y_pred_dummy_2)  
+print(f'\nRMSE (mean): {rmse_tree_dm1}')
+print(f'RMSE (median): {rmse_tree_dm2}')
+
+# Cálculo del error absoluto medio.
+mae_tree_dm1 = mae(y_train_test, y_pred_dummy_1)
+mae_tree_dm2 = mae(y_train_test, y_pred_dummy_2)
+print(f'MAE (mean): {mae_tree_dm1}')
+print(f'MAE (median): {mae_tree_dm2}')
+
+# Relación entre el error del modelo y el error de los modelos dummy.
+print(f'\nRMSE dummy (mean)/RMSE tree: {rmse_tree_dm1/rmse_tree}')
+print(f'RMSE dummy (median)/RMSE tree: {rmse_tree_dm2/rmse_tree}')
+print(f'MAE dummy (mean)/MAE tree: {mae_tree_dm1/mae_tree}')
+print(f'MAE dummy (median)/MAE tree: {mae_tree_dm2/mae_tree}')
+
 
 # Regresión lineal.
 print('\n[bold yellow]Regresión lineal\n------------------[/bold yellow]')
 
-# Entrenamiento del modelo.
-clf = LinearRegression()
-np.random.seed(13)
+# [Regresión lineal] MODELO BASE.
+print('\n[yellow]Modelo base[/yellow]')
+base_linear = LinearRegression()
 
-# Medir tiempo de entrenamiento.
+# Entrenamiento (con medición del tiempo).
 start = time.time()
-clf.fit(X_train_train_n, y_train_train_n)
+base_linear.fit(X_train_train_n, y_train_train_n)
 end = time.time()
-print(f'Tiempo de entrenamiento: {(end - start):.5f}')
+time_linear = end - start
+print(f'Tiempo de entrenamiento: {time_linear:.5f}')
 
 # Predicciones del conjunto de test.
-y_pred = clf.predict(X_train_test_n)
-
-resultado_predicciones_linear_normalizada = y_pred
+y_pred_n = base_linear.predict(X_train_test_n)
 
 # Denormalizar los datos.
-y_pred = scaler.inverse_transform(y_pred)
+y_pred = scaler.inverse_transform(y_pred_n)
 
 # Cálculo del error cuadrático medio.
 rmse_linear = rmse(y_train_test, y_pred)
-print(f'\nError cuadrático medio del modelo Regresión lineal: {rmse_linear}')
+print(f'\nRMSE: {rmse_linear}')
 
 # Cálculo del error absoluto medio.
 mae_linear = mae(y_train_test, y_pred)
-print(f'Error absoluto medio del modelo Regresión lineal: {mae_linear}')
+print(f'MAE: {mae_linear}')
 
-#Usar predefined split para la validación cruzada
-print('\nValidación cruzada con PredefinedSplit\n')
-
+# [Regresión lineal] MODELO VALIDACIÓN CRUZADA.
+print('\n[yellow]Modelo validación cruzada[/yellow]')
 
 '''
 print(ps.get_n_splits(X))
@@ -380,38 +479,68 @@ for train, valid in ps.split(X):
 '''
 
 # Usar el predefined split para la validación cruzada.
-clf = LinearRegression()
-np.random.seed(13)
+cv_linear = LinearRegression()
 
-scores = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
-print(f'Error cuadrático medio del modelo Regresión lineal calculado con validación cruzada: {-scores.mean()}')
+start = time.time()
+scores = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
+end = time.time()
+time1_linear_cv = end - start
 
-scores = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
-print(f'Error absoluto medio del modelo Regresión lineal calculado con validación cruzada: {-scores.mean()}')
+start = time.time()
+scores = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
+end = time.time()
+time2_linear_cv = end - start
 
-# Probamos si es mejor que un dummy regressor linear.
+print(f'Tiempo de entrenamiento (RMSE): {time1_linear_cv:.5f}')
+print(f'Tiempo de entrenamiento (MAE): {time2_linear_cv:.5f}')
+print(f'\nRMSE: {-scores.mean()}')
+print(f'RMSE: {-scores.mean()}')
 
-# Estrategy mean.
-regr_mean = DummyRegressor(strategy='mean')
-regr_mean.fit(X_train_train_n, y_train_train_n)
-rmse_mean = rmse(y_train_test_n, regr_mean.predict(X_train_test_n))
 
-rmse_normalizado = rmse(y_train_test_n, resultado_predicciones_linear_normalizada)
+# [Regresión lineal] MODELOS DUMMY.
+print('\n[yellow]Modelos dummy[/yellow]')
+dummy_1_linear = DummyRegressor(strategy='mean')
+dummy_2_linear = DummyRegressor(strategy='median')
 
-print('\nDummy Regressor:\n')
-print(f'Error cuadrático medio del linear dummy (mean): {rmse_mean}')
-print(f'RMSE ratio linear/dummy(mean): {rmse_mean/rmse_normalizado}')
+# Entrenamiento de los modelos dummy (con medición del tiempo).
+start = time.time()
+dummy_1_linear.fit(X_train_train_n, y_train_train_n)
+end = time.time()
+time_linear_dm1 = end - start
 
-# Estrategy median.
-regr_median = DummyRegressor(strategy='median')
-regr_median.fit(X_train_train_n, y_train_train_n)
-mae_dummy_linear = mae(y_train_test_n, regr_median.predict(X_train_test_n))
+start = time.time()
+dummy_2_linear.fit(X_train_train_n, y_train_train_n)
+end = time.time()
+time_linear_dm2 = end - start
 
-rmse_normalizado = rmse(y_train_test_n, resultado_predicciones_linear_normalizada)
+print(f'Tiempo de entrenamiento (mean): {time_linear_dm1:.5f}')
+print(f'Tiempo de entrenamiento (median): {time_linear_dm2:.5f}')
 
-print(f'\nError absoluto medio del linear dummy (median): {mae_dummy_linear}')
-print(f'MAE ratio linear/dummy(median): {mae_dummy_linear/rmse_normalizado}')
-print()
+# Predicciones del conjunto de test.
+y_pred_dummy_1_n = dummy_1_linear.predict(X_train_test_n).reshape(-1, 1)
+y_pred_dummy_2_n = dummy_2_linear.predict(X_train_test_n).reshape(-1, 1)
+
+# Denormalizar los datos.
+y_pred_dummy_1 = scaler.inverse_transform(y_pred_dummy_1_n)
+y_pred_dummy_2 = scaler.inverse_transform(y_pred_dummy_2_n)
+
+# Cálculo del error cuadrático medio.
+rmse_linear_dm1 = rmse(y_train_test, y_pred_dummy_1)
+rmse_linear_dm2 = rmse(y_train_test, y_pred_dummy_2)
+print(f'\nRMSE (mean): {rmse_linear_dm1}')
+print(f'RMSE (median): {rmse_linear_dm2}')
+
+# Cálculo del error absoluto medio.
+mae_linear_dm1 = mae(y_train_test, y_pred_dummy_1)
+mae_linear_dm2 = mae(y_train_test, y_pred_dummy_2)
+print(f'MAE (mean): {mae_linear_dm1}')
+print(f'MAE (median): {mae_linear_dm2}')
+
+# Cálculo de la diferencia entre el error de los modelos dummy y el modelo base.
+print(f'\nRMSE dummy (mean)/RMSE linear: {rmse_linear_dm1/rmse_linear}')
+print(f'RMSE dummy (median)/RMSE linear: {rmse_linear_dm2/rmse_linear}')
+print(f'MAE dummy (mean)/MAE linear: {mae_linear_dm1/mae_linear}')
+print(f'MAE dummy (median)/MAE linear: {mae_linear_dm2/mae_linear}')
 
 
 
@@ -419,7 +548,7 @@ print()
 '''Evaluación de modelos simples con ajuste de hp.'''
 #------------------------------------------------------------
 
-print('[bold red]' + '-' * 60 +'\nEvaluación de modelos simples con ajuste de hp.\n' + '-' * 60 + '[/bold red]')
+print('\n' + '[bold red]' + '-' * 60 +'\nEvaluación de modelos simples con ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
 # KNN.
 print('\n[bold blue]KNN\n----[/bold blue]')
@@ -462,15 +591,15 @@ y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
-rmse_knn_adjusted = rmse(y_train_test, y_pred)
-print(f'\nError cuadrático medio del modelo KNN: {rmse_knn_adjusted}')
+rmse_knn_a = rmse(y_train_test, y_pred)
+print(f'\nRMSE: {rmse_knn_a}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_knn_adjusted = mae(y_train_test, y_pred)
-print(f'Error absoluto medio del modelo KNN: {mae_knn_adjusted}')
+mae_knn_a = mae(y_train_test, y_pred)
+print(f'MAE: {mae_knn_a}')
 
 # Mejor score.
-#mae_knn_adjusted = -grid_result.best_score_
+#mae_knn_a = -grid_result.best_score_
 #print(f'\nMejor score: {-grid_result.best_score_}')
 
 
@@ -478,11 +607,6 @@ print(f'Error absoluto medio del modelo KNN: {mae_knn_adjusted}')
 print('\n[bold blue]Árbol de decisión\n------------------[/bold blue]')
 
 # Usaremos grid search para encontrar los mejores hiperparámetros haciendo antes predefined split.
-#N_train = 7*365
-#N_test = 3*365
-
-#selector = [-1] * N_train + [0] * N_test
-#ps = PredefinedSplit(selector)
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
@@ -493,7 +617,7 @@ param_grid = {
 }
 
 # Definimos el modelo.
-model = tree.DecisionTreeRegressor()
+model = DecisionTreeRegressor()
 np.random.seed(13)
 
 # Definimos el grid search.
@@ -516,15 +640,15 @@ y_pred = best_model.predict(X_train_test)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
-rmse_tree_adjusted = rmse(y_train_test, y_pred)
-print(f'\nError cuadrático medio del modelo Árbol de Decisión: {rmse_tree_adjusted}')
+rmse_tree_a = rmse(y_train_test, y_pred)
+print(f'\nRMSE: {rmse_tree_a}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_tree_adjusted = mae(y_train_test, y_pred)
-print(f'Error absoluto medio del modelo Árbol de Decisión: {mae_tree_adjusted}')
+mae_tree_a = mae(y_train_test, y_pred)
+print(f'MAE: {mae_tree_a}')
 
 # Mejor score.
-#mae_tree_adjusted = -grid_result.best_score_
+#mae_tree_a = -grid_result.best_score_
 #print(f'\nMejor score: {-grid_result.best_score_}')
 
 
@@ -532,11 +656,6 @@ print(f'Error absoluto medio del modelo Árbol de Decisión: {mae_tree_adjusted}
 print('\n[bold blue]Regresión lineal\n------------------[/bold blue]')
 
 # Usaremos grid search para encontrar los mejores hiperparámetros haciendo antes predefined split.
-#N_train = 7*365
-#N_test = 3*365
-
-#selector = [-1] * N_train + [0] * N_test
-#ps = PredefinedSplit(selector)
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
@@ -570,15 +689,15 @@ y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
-rmse_linear_adjusted = rmse(y_train_test, y_pred)
-print(f'\nError cuadrático medio del modelo Regresión Lineal: {rmse_linear_adjusted}')
+rmse_linear_a = rmse(y_train_test, y_pred)
+print(f'\nRMSE: {rmse_linear_a}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_linear_adjusted = mae(y_train_test, y_pred)
-print(f'Error absoluto medio del modelo Regresión Lineal: {mae_linear_adjusted}')
+mae_linear_a = mae(y_train_test, y_pred)
+print(f'MAE: {mae_linear_a}')
 
 # Mejor score.
-#mae_linear_adjusted = -grid_result.best_score_
+#mae_linear_a = -grid_result.best_score_
 #print(f'\nMejor score: {-grid_result.best_score_}')
 
 print()
@@ -595,38 +714,39 @@ print('[bold red]' + '-' * 60 +'\nComparación de modelos simples y resultados.\
 print('\n[bold green]KNN\n----[/bold green]')
 
 print('MAE sin ajustar:', mae_knn)
-print('MAE ajustado:',mae_knn_adjusted)
-print('MAE ratio knn/knn_adjusted:', mae_knn/mae_knn_adjusted)
+print('MAE ajustado:', mae_knn_a)
+print('MAE ratio KNN/knn_adjusted:', mae_knn/mae_knn_a)
 
 print('\nRMSE sin ajustar:', rmse_knn)
-print('RMSE ajustado:',rmse_knn_adjusted)
-print('RMSE ratio knn/knn_adjusted:', rmse_knn/rmse_knn_adjusted)
+print('RMSE ajustado:', rmse_knn_a)
+print('RMSE ratio KNN/knn_adjusted:', rmse_knn/rmse_knn_a)
 
 
 # Arbol de decisión.
 print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
 
 print('MAE sin ajustar:', mae_tree)
-print('MAE ajustado:',mae_tree_adjusted)
-print('MAE ratio tree/tree_adjusted:', mae_tree/mae_tree_adjusted)
-print('MAE ratio dummy/tree_adjusted:', mae_dummy_tree/mae_tree_adjusted)
+print('MAE ajustado:', mae_tree_a)
+print('MAE ratio tree/tree_adjusted:', mae_tree/mae_tree_a)
+print('MAE ratio dummy/tree_adjusted:', mae_linear_dm1/mae_tree_a)
 
 print('\nRMSE sin ajustar:', rmse_tree)
-print('RMSE ajustado:',rmse_tree_adjusted)
-print('RMSE ratio tree/tree_adjusted:', rmse_tree/rmse_tree_adjusted)
-print('RMSE ratio dummy/tree_adjusted:', rmse_dummy_tree/rmse_tree_adjusted)
+print('RMSE ajustado:', rmse_tree_a)
+print('RMSE ratio tree/tree_adjusted:', rmse_tree/rmse_tree_a)
+print('RMSE ratio dummy/tree_adjusted:', mae_linear_dm2/rmse_tree_a)
+
 
 # Regresión lineal.
 print('\n[bold green]Regresión lineal\n------------------[/bold green]')
 
 print('MAE sin ajustar:', mae_linear)
-print('MAE ajustado:',mae_linear_adjusted)
-print('MAE ratio linear/linear_adjusted:', mae_linear/mae_linear_adjusted)
+print('MAE ajustado:', mae_linear_a)
+print('MAE ratio linear/linear_adjusted:', mae_linear/mae_linear_a)
 #print('(NO VALIDO POR NORMALIZACIÓN) MAE ratio dummy/linear_adjusted:', mae_dummy_linear/mae_linear_adjusted)
 
 print('\nRMSE sin ajustar:', rmse_linear)
-print('RMSE ajustado:',rmse_linear_adjusted)
-print('RMSE ratio linear/linear_adjusted:', rmse_linear/rmse_linear_adjusted)
+print('RMSE ajustado:',rmse_linear_a)
+print('RMSE ratio linear/linear_adjusted:', rmse_linear/rmse_linear_a)
 
 print()
 
