@@ -57,12 +57,13 @@ def mae (y_test, y_test_pred):
     return metrics.mean_absolute_error(y_test, y_test_pred)
 
 
+print('[bold yellow]' + '-' * 60 + '\n' + '-' * 60 + '\n' + '-' * 60 + '\n' + '[/bold yellow]')
 
 #------------------------------------------------------------
 '''Importamos los datos.'''
 #------------------------------------------------------------
 
-print('-' * 60 +'\nImportando los datos...\n' + '-' * 60)
+print('[bold red]' + '-' * 60 +'\nImportando los datos...\n' + '-' * 60 + '[/bold red]')
 
 
 # Datos disponibles.
@@ -185,7 +186,7 @@ scaler.fit(X_train)
 X_train_n = scaler.transform(X_train)
 X_test_n = scaler.transform(X_test)
 
-scaler = scaler = MinMaxScaler()
+scaler = MinMaxScaler()
 scaler.fit(y_train.reshape(-1, 1))
 y_train_n = scaler.transform(y_train.reshape(-1, 1))
 y_test_n = scaler.transform(y_test.reshape(-1, 1))
@@ -207,29 +208,29 @@ X_train_train, X_train_test, y_train_train, y_train_test = train_test_split(X_tr
 X_train_train_n, X_train_test_n, y_train_train_n, y_train_test_n = train_test_split(X_train_n, y_train_n, test_size=3/10, random_state=13, shuffle=False)
 
 # Muestra el tamaño de los datos de entrenamiento y test nuevos.
-print('Datos train_train: ' ,X_train_train.shape, y_train_train.shape)   # 2550 días -> 7 años.
-print('Datos train_test: ' ,X_train_test.shape, y_train_test.shape)     # 1100 días  ->  3 años.
+print('Datos train_train: ' , X_train_train.shape, y_train_train.shape)   # 2550 días -> 7 años.
+print('Datos train_test: ' , X_train_test.shape, y_train_test.shape)      # 1100 días  ->  3 años.
 
 
 # KNN.
 print('\n[bold yellow]KNN\n----[/bold yellow]')
 
 # Entrenamiento del modelo.
-clf = KNeighborsRegressor()
+base_knn = KNeighborsRegressor()
 np.random.seed(13)
 
 # Medir tiempo de entrenamiento.
 start = time.time()
-clf.fit(X_train_train_n, y_train_train_n)
+base_knn.fit(X_train_train_n, y_train_train_n)
 end = time.time()
 print(f'Tiempo de entrenamiento: {(end - start):.5f}')
 
 
 # Predicciones del conjunto de test.
-y_pred = clf.predict(X_train_test_n)
+y_pred_n = base_knn.predict(X_train_test_n)
 
 # Denormalizar los datos (aunque se podría RMSE y MAE sin denormalizar).
-y_pred = scaler.inverse_transform(y_pred)
+y_pred = scaler.inverse_transform(y_pred_n)
 
 # Cálculo del error cuadrático medio.
 rmse_knn = rmse(y_train_test, y_pred)
@@ -240,10 +241,9 @@ mae_knn = mae(y_train_test, y_pred)
 print(f'Error absoluto medio del modelo KNN: {mae_knn}')
 
 
-
 # Usar predefined split para la validación cruzada.
-
 print('\nValidación cruzada con PredefinedSplit\n')
+
 # Número de días de entrenamiento y test.
 N_train = 7*365
 N_test = 3*365
@@ -264,14 +264,11 @@ for train, valid in ps.split(X):
 '''
 
 # Usar el predefined split para la validación cruzada.
-clf = KNeighborsRegressor()
-np.random.seed(13)
+rmse_knn_cv = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
+print(f'Error cuadrático medio del modelo KNN calculado con validación cruzada: {-rmse_knn_cv.mean()}')
 
-scores = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
-print(f'Error cuadrático medio del modelo KNN calculado con validación cruzada: {-scores.mean()}')
-
-scores = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
-print(f'Error absoluto medio del modelo KNN calculado con validación cruzada: {-scores.mean()}')
+mae_knn_cv = cross_val_score(clf, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
+print(f'Error absoluto medio del modelo KNN calculado con validación cruzada: {-mae_knn_cv.mean()}')
 
 # Árbol de decisión.
 print('\n[bold yellow]Árbol de decisión\n------------------[/bold yellow]')
@@ -300,7 +297,6 @@ print(f'Error absoluto medio del modelo Árbol de decisión: {mae_tree}')
 # Usar predefined split para la validación cruzada.
 print('\nValidación cruzada con PredefinedSplit\n')
 
-
 '''
 print(ps.get_n_splits(X))
 
@@ -310,15 +306,16 @@ for train, valid in ps.split(X):
     print(f'Indices of the train set: {train}')
     print(f'Indices of the valid set: {valid}')
 '''
+
 # Usar el predefined split para la validación cruzada.
 clf = tree.DecisionTreeRegressor()
 np.random.seed(13)
 
-scores = cross_val_score(clf, X_train, y_train, cv=ps, scoring='neg_root_mean_squared_error')
-print(f'Error cuadrático medio del modelo Árbol de decisión calculado con validación cruzada: {-scores.mean()}')
+rmse_tree_cv = cross_val_score(clf, X_train, y_train, cv=ps, scoring='neg_root_mean_squared_error')
+print(f'Error cuadrático medio del modelo Árbol de decisión calculado con validación cruzada: {-rmse_tree_cv.mean()}')
 
-scores = cross_val_score(clf, X_train, y_train, cv=ps, scoring='neg_mean_absolute_error')
-print(f'Error absoluto medio del modelo Árbol de decisión calculado con validación cruzada: {-scores.mean()}')
+mae_tree_cv = cross_val_score(clf, X_train, y_train, cv=ps, scoring='neg_mean_absolute_error')
+print(f'Error absoluto medio del modelo Árbol de decisión calculado con validación cruzada: {-mae_tree_cv.mean()}')
 
 # Probamos si es mejor que un dummy regressor tree.
 
@@ -428,36 +425,27 @@ print('[bold red]' + '-' * 60 +'\nEvaluación de modelos simples con ajuste de h
 print('\n[bold blue]KNN\n----[/bold blue]')
 
 # Usaremos grid search para encontrar los mejores hiperparámetros haciendo antes predefined split.
-#N_train = 7*365
-#N_test = 3*365
 
-#selector = [-1] * N_train + [0] * N_test
-#ps = PredefinedSplit(selector)
-
-# Definimos los valores de los hiperparámetros que queremos probar.
-
-#n_neighbors
-#n_neighbors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
-n_neighbors = [1, 2, 3, 4, 5, 6, 7, 8]
-
-#weights
-weights = ['uniform', 'distance']
-
-#metric
-metric = ['euclidean', 'manhattan', 'chebyshev', 'minkowski']
-
-#leaf_size
-#leaf_size = list(range(1,50))
-leaf_size = [1, 2, 3, 5, 10, 30, 50, 100]
-
-# Definimos el diccionario con los hiperparámetros.
-param_grid = dict(n_neighbors=n_neighbors, weights=weights, metric=metric, leaf_size=leaf_size)
+# Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
+param_grid = {
+    'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8],
+    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+    'weights': ['uniform', 'distance'],
+    'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
+    'leaf_size': [1, 2, 3, 5, 10, 30, 50, 100]
+    #'leaf_size': list(range(1,50))
+}
 
 # Definimos el modelo.
 model = KNeighborsRegressor()
 
 # Definimos el grid search.
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=ps, scoring='neg_mean_absolute_error', verbose=1, n_jobs=-1)
+grid = GridSearchCV(estimator=model,
+                    param_grid=param_grid,
+                    cv=ps,
+                    scoring='neg_mean_absolute_error',
+                    verbose=1,
+                    n_jobs=-1)
 
 # Entrenamos el grid search.
 grid_result = grid.fit(X_train_n, y_train_n)
@@ -467,14 +455,19 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred_n = best_model.predict(X_test_n)
+y_pred_n = best_model.predict(X_train_test_n)
 
 # Denormalizar la predicción del modelo.
 y_pred = scaler.inverse_transform(y_pred_n)
 
-# Calcular la métrica de evaluación en la escala original.
-mae_knn_adjusted = mae(y_test, y_pred)
-print(f'\nError absoluto medio del modelo KNN: {mae_knn_adjusted}')
+# Calcular el error cuadrático medio en la escala original.
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
+rmse_knn_adjusted = rmse(y_train_test, y_pred)
+print(f'\nError cuadrático medio del modelo KNN: {rmse_knn_adjusted}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_knn_adjusted = mae(y_train_test, y_pred)
+print(f'Error absoluto medio del modelo KNN: {mae_knn_adjusted}')
 
 # Mejor score.
 #mae_knn_adjusted = -grid_result.best_score_
@@ -491,30 +484,25 @@ print('\n[bold blue]Árbol de decisión\n------------------[/bold blue]')
 #selector = [-1] * N_train + [0] * N_test
 #ps = PredefinedSplit(selector)
 
-# Definimos los valores de los hiperparámetros que queremos probar.
-
-#criterion
-criterion = ['absolute_error', 'poisson', 'squared_error', 'friedman_mse']
-
-#max_depth
-#max_depth = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
-max_depth = [1, 2, 3, 4, 5, 6, 7, 8]
-
-#min_samples_split
-min_samples_split = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-#min_samples_leaf
-min_samples_leaf = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-# Definimos el diccionario con los hiperparámetros.
-param_grid = dict(max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf)
-#param_grid = dict(criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf)
+# Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
+param_grid = {
+    'max_depth': [1, 2, 3, 4, 5, 6, 7, 8],
+    #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+    'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'min_samples_leaf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+}
 
 # Definimos el modelo.
 model = tree.DecisionTreeRegressor()
+np.random.seed(13)
 
 # Definimos el grid search.
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=ps, scoring='neg_mean_absolute_error', verbose=1, n_jobs=-1)
+grid = GridSearchCV(estimator=model,
+                    param_grid=param_grid,
+                    cv=ps,
+                    scoring='neg_mean_absolute_error',
+                    verbose=1,
+                    n_jobs=-1)
 
 # Entrenamos el grid search.
 grid_result = grid.fit(X_train, y_train)
@@ -526,9 +514,14 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 best_model = grid_result.best_estimator_
 y_pred = best_model.predict(X_train_test)
 
-# Calcular la métrica de evaluación en la escala original.
+# Calcular el error cuadrático medio en la escala original.
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
+rmse_tree_adjusted = rmse(y_train_test, y_pred)
+print(f'\nError cuadrático medio del modelo Árbol de Decisión: {rmse_tree_adjusted}')
+
+# Calcular el error absoluto medio en la escala original.
 mae_tree_adjusted = mae(y_train_test, y_pred)
-print(f'\nError absoluto medio del modelo Árbol de decisión: {mae_tree_adjusted}')
+print(f'Error absoluto medio del modelo Árbol de Decisión: {mae_tree_adjusted}')
 
 # Mejor score.
 #mae_tree_adjusted = -grid_result.best_score_
@@ -545,19 +538,22 @@ print('\n[bold blue]Regresión lineal\n------------------[/bold blue]')
 #selector = [-1] * N_train + [0] * N_test
 #ps = PredefinedSplit(selector)
 
-# Definimos los valores de los hiperparámetros que queremos probar.
-
-#fit_intercept
-fit_intercept = [True, False]
-
-# Definimos el diccionario con los hiperparámetros.
-param_grid = dict(fit_intercept=fit_intercept)
+# Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
+param_grid = {
+    'fit_intercept':  [True, False],
+    'positive': [True, False],
+}
 
 # Definimos el modelo.
 model = LinearRegression()
 
 # Definimos el grid search.
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=ps, scoring='neg_mean_absolute_error', verbose=1, n_jobs=-1)
+grid = GridSearchCV(estimator=model,
+                    param_grid=param_grid,
+                    cv=ps,
+                    scoring='neg_mean_absolute_error',
+                    verbose=1,
+                    n_jobs=-1)
 
 # Entrenamos el grid search.
 grid_result = grid.fit(X_train_n, y_train_n)
@@ -572,13 +568,20 @@ y_pred_n = best_model.predict(X_train_test_n)
 # Desnormalizar la predicción del modelo.
 y_pred = scaler.inverse_transform(y_pred_n)
 
-# Calcular la métrica de evaluación en la escala original.
+# Calcular el error cuadrático medio en la escala original.
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
+rmse_linear_adjusted = rmse(y_train_test, y_pred)
+print(f'\nError cuadrático medio del modelo Regresión Lineal: {rmse_linear_adjusted}')
+
+# Calcular el error absoluto medio en la escala original.
 mae_linear_adjusted = mae(y_train_test, y_pred)
-print(f'\nError absoluto medio del modelo linear: {mae_linear_adjusted}')
+print(f'Error absoluto medio del modelo Regresión Lineal: {mae_linear_adjusted}')
 
 # Mejor score.
 #mae_linear_adjusted = -grid_result.best_score_
 #print(f'\nMejor score: {-grid_result.best_score_}')
+
+print()
 
 
 
@@ -588,15 +591,19 @@ print(f'\nError absoluto medio del modelo linear: {mae_linear_adjusted}')
 
 print('[bold red]' + '-' * 60 +'\nComparación de modelos simples y resultados.\n' + '-' * 60 + '[/bold red]')
 
-#KNN
+# KNN.
 print('\n[bold green]KNN\n----[/bold green]')
 
 print('MAE sin ajustar:', mae_knn)
 print('MAE ajustado:',mae_knn_adjusted)
 print('MAE ratio knn/knn_adjusted:', mae_knn/mae_knn_adjusted)
 
+print('\nRMSE sin ajustar:', rmse_knn)
+print('RMSE ajustado:',rmse_knn_adjusted)
+print('RMSE ratio knn/knn_adjusted:', rmse_knn/rmse_knn_adjusted)
 
-#Arbol de decisión
+
+# Arbol de decisión.
 print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
 
 print('MAE sin ajustar:', mae_tree)
@@ -604,7 +611,12 @@ print('MAE ajustado:',mae_tree_adjusted)
 print('MAE ratio tree/tree_adjusted:', mae_tree/mae_tree_adjusted)
 print('MAE ratio dummy/tree_adjusted:', mae_dummy_tree/mae_tree_adjusted)
 
-#Regresión lineal
+print('\nRMSE sin ajustar:', rmse_tree)
+print('RMSE ajustado:',rmse_tree_adjusted)
+print('RMSE ratio tree/tree_adjusted:', rmse_tree/rmse_tree_adjusted)
+print('RMSE ratio dummy/tree_adjusted:', rmse_dummy_tree/rmse_tree_adjusted)
+
+# Regresión lineal.
 print('\n[bold green]Regresión lineal\n------------------[/bold green]')
 
 print('MAE sin ajustar:', mae_linear)
@@ -612,7 +624,19 @@ print('MAE ajustado:',mae_linear_adjusted)
 print('MAE ratio linear/linear_adjusted:', mae_linear/mae_linear_adjusted)
 #print('(NO VALIDO POR NORMALIZACIÓN) MAE ratio dummy/linear_adjusted:', mae_dummy_linear/mae_linear_adjusted)
 
+print('\nRMSE sin ajustar:', rmse_linear)
+print('RMSE ajustado:',rmse_linear_adjusted)
+print('RMSE ratio linear/linear_adjusted:', rmse_linear/rmse_linear_adjusted)
+
 print()
+
+
+
+#------------------------------------------------------------
+'''Reducción de dimensionalidad.'''
+#------------------------------------------------------------
+
+print('[bold red]' + '-' * 60 +'\nReducción de dimensionalidad.\n' + '-' * 60 + '[/bold red]')
 
 
 
@@ -622,7 +646,7 @@ print()
 
 print('[bold red]' + '-' * 60 +'\nEvaluación de métodos avanzados sin ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
-print('\nSVM\n-----')
+print('\n[bold yellow]SVM\n-----[/bold yellow]')
 
 # SVM
 svm_model = SVR()
@@ -636,7 +660,7 @@ print(f'\nError cuadrático medio del modelo SVM: {rmse_svm}')
 
 
 
-print('\nRandom Forests\n---------------')
+print('\n[bold yellow]Random Forests\n---------------[/bold yellow]')
 
 # Random Forest
 rf_model = RandomForestRegressor()
@@ -654,9 +678,9 @@ print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf}')
 
 print('[bold red]' + '-' * 60 +'\nEvaluación de modelos avanzados con ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
-print('\nSVMs\n-----')
+print('\n[bold blue]SVMs\n-----[/bold blue]')
 
-print('Random Forests\n---------------')
+print('[bold blue]Random Forests\n---------------[/bold blue]')
 
 
 
