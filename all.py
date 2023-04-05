@@ -1,6 +1,8 @@
 #!pip install --upgrade linear-tree
 #!pip install statsmodels
 
+import os
+
 # Importación de datos.
 import numpy as np
 import pandas as pd
@@ -133,6 +135,29 @@ for col in cols:
     plt.show()
 '''
 
+#Crear una carpeta para guardar las gráficas.
+'''
+if not os.path.exists('graficas'):
+    os.makedirs('graficas')
+
+# Boxplot de cada variable meteorológica con seaborn.
+sns.set(style='ticks')
+
+# Seleccionar solo las columnas de las variables meteorológicas
+cols = mean_df.columns[:-1]
+
+# Crear un diagrama de cajas para cada variable
+for col in cols:
+    sns.boxplot(data=mean_df, x=col)
+    plt.savefig(f'graficas/{col}.png')
+    plt.clf()
+
+# Histograma de la variable de respuesta.
+sns.displot(mean_df['salida'], kde=True)
+plt.savefig('graficas/salida.png')
+plt.clf()
+'''
+
 # Correlación entre variables meteorológicas.
 
 sns.set_theme(style='white')
@@ -152,7 +177,7 @@ f, ax = plt.subplots(figsize=(15, 15))
 cmap = sns.diverging_palette(230, 20, as_cmap=True)
 
 # Dibujar el mapa de calor con la máscara y el mapa de colores adecuados.
-sns.heatmap(corr, mask=mask, cmap=cmap, vmax=1, vmin=-1, center=0,
+sns.heatmap(corr, mask=mask, cmap=cmap, vmax=1, vmin=0, center=0,
             square=True, linewidths=.5, cbar_kws={'shrink': .5}, annot=True)
 
 #plt.show()
@@ -758,7 +783,70 @@ print()
 
 print('[bold red]' + '-' * 60 +'\nReducción de dimensionalidad.\n' + '-' * 60 + '[/bold red]')
 
+# quitamos del dataframe de las medias de las variables las variables que no queremos usar.
+df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media'], axis=1)
 
+# imprimimos el dataframe reducido.
+print(df_reducida)
+
+print(df_reducida.shape)
+
+# Dividimos el dataframe reducido en train y test.
+X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(df_reducida.drop('salida', axis=1), df_reducida['salida'], test_size=2/12, random_state=13, shuffle=False)
+
+# Volvemos a dividir el train en train_train y train_test.
+X_train_train_r, X_train_test_r, y_train_train_r, y_train_test_r = train_test_split(X_train_r, y_train_r, test_size=3/10, random_state=13, shuffle=False)
+
+# Normalizamos los datos.
+scaler = StandardScaler()
+scaler.fit(X_train_train_r)
+X_train_train_r_n = scaler.transform(X_train_train_r)
+X_train_test_r_n = scaler.transform(X_train_test_r)
+X_test_r_n = scaler.transform(X_test_r)
+
+# Normalizamos la salida.
+scaler = StandardScaler()
+scaler.fit(y_train_train_r.values.reshape(-1, 1))
+y_train_train_r_n = scaler.transform(y_train_train_r.values.reshape(-1, 1))
+y_train_test_r_n = scaler.transform(y_train_test_r.values.reshape(-1, 1))
+y_test_r_n = scaler.transform(y_test_r.values.reshape(-1, 1))
+
+# Entrenamos a los modelos Knn, Árbol de decisión y Regresión lineal con el dataframe reducido y con los mejores hiperparametros.
+
+# KNN.
+print('\n[bold yellow]KNN\n-----[/bold yellow]')
+knn_model_r = KNeighborsRegressor(leaf_size=1, metric='euclidean', n_neighbors=8, weights='distance')
+knn_model_r.fit(X_train_train_r_n, y_train_train_r_n)
+knn_preds_r = knn_model_r.predict(X_train_test_r_n)
+mae_knn_r = mae(y_train_test_r_n, knn_preds_r)
+rmse_knn_r = rmse(y_train_test_r_n, knn_preds_r)
+
+print(f'\nError cuadrático medio del modelo KNN: {rmse_knn_r}')
+print(f'\nError absoluto medio del modelo KNN: {mae_knn_r}')
+
+# Arbol de decisión.
+print('\n[bold yellow]Árbol de decisión\n-----[/bold yellow]')
+tree_model_r = DecisionTreeRegressor(max_depth=8, min_samples_leaf=10, min_samples_split=7)
+tree_model_r.fit(X_train_train_r, y_train_train_r)
+tree_preds_r = tree_model_r.predict(X_train_test_r)
+mae_tree_r = mae(y_train_test_r, tree_preds_r)
+rmse_tree_r = rmse(y_train_test_r, tree_preds_r)
+
+print(f'\nError cuadrático medio del modelo Árbol de decisión: {rmse_tree_r}')
+print(f'\nError absoluto medio del modelo Árbol de decisión: {mae_tree_r}')
+
+# Regresión lineal.
+print('\n[bold green]Regresión lineal\n------------------[/bold green]')
+linear_model_r = LinearRegression(fit_intercept=True, positive=False)
+linear_model_r.fit(X_train_train_r_n, y_train_train_r_n)
+linear_preds_r = linear_model_r.predict(X_train_test_r_n)
+mae_linear_r = mae(y_train_test_r_n, linear_preds_r)
+rmse_linear_r = rmse(y_train_test_r_n, linear_preds_r)
+
+print(f'\nError cuadrático medio del modelo Regresión lineal: {rmse_linear_r}')
+print(f'\nError absoluto medio del modelo Regresión lineal: {mae_linear_r}')
+
+print("\nREVISAR ERRORES (DESNORMALIZAR) Y ESTRATEGIA PORQUE MUCHO ERROR\n")
 
 #------------------------------------------------------------
 '''Evaluación de métodos avanzados sin ajuste de hp.'''
