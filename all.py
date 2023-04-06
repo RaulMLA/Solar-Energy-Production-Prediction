@@ -1,5 +1,6 @@
 #!pip install --upgrade linear-tree
 #!pip install statsmodels
+#!pip install rich
 
 import os
 
@@ -252,7 +253,7 @@ start = time.time()
 base_knn.fit(X_train_train_n, y_train_train_n)
 end = time.time()
 time_knn = end - start
-print(f'Tiempo de entrenamiento: {time_knn:.5f}')
+print(f'Tiempo de entrenamiento: {time_knn:.5f} segundos.')
 
 # Predicciones del conjunto de test.
 y_pred_n = base_knn.predict(X_train_test_n)
@@ -307,8 +308,8 @@ mae_knn_cv = cross_val_score(cv_knn, X_train_n, y_train_n, cv=ps, scoring='neg_m
 end = time.time()
 time2_knn_cv = end - start
 
-print(f'Tiempo de entrenamiento (RMSE): {time1_knn_cv:.5f}')
-print(f'Tiempo de entrenamiento (MAE): {time2_knn_cv:.5f}')
+print(f'Tiempo de entrenamiento (RMSE): {time1_knn_cv:.5f} segundos.')
+print(f'Tiempo de entrenamiento (MAE): {time2_knn_cv:.5f} segundos.')
 print(f'\nRMSE: {-rmse_knn_cv.mean()}')
 print(f'MAE: {-mae_knn_cv.mean()}')
 
@@ -329,8 +330,8 @@ dummy_2_knn.fit(X_train_train_n, y_train_train_n)
 end = time.time()
 time_knn_dm2 = end - start
 
-print(f'Tiempo de entrenamiento (mean): {time_knn_dm1:.5f}')
-print(f'Tiempo de entrenamiento (median): {time_knn_dm2:.5f}')
+print(f'Tiempo de entrenamiento (mean): {time_knn_dm1:.5f} segundos.')
+print(f'Tiempo de entrenamiento (median): {time_knn_dm2:.5f} segundos.')
 
 # Predicciones del conjunto de test.
 y_pred_dummy_1_n = dummy_1_knn.predict(X_train_test_n).reshape(-1, 1)
@@ -371,7 +372,7 @@ start = time.time()
 base_tree.fit(X_train_train, y_train_train)
 end = time.time()
 time_tree = end - start
-print(f'Tiempo de entrenamiento: {time_tree:.5f}')
+print(f'Tiempo de entrenamiento: {time_tree:.5f} segundos.')
 
 # Predicciones del conjunto de test.
 y_pred = base_tree.predict(X_train_test)
@@ -414,8 +415,8 @@ end = time.time()
 time2_tree_cv = end - start
 
 
-print(f'Tiempo de entrenamiento: {time1_tree_cv:.5f}')
-print(f'Tiempo de entrenamiento: {time2_tree_cv:.5f}')
+print(f'Tiempo de entrenamiento: {time1_tree_cv:.5f} segundos.')
+print(f'Tiempo de entrenamiento: {time2_tree_cv:.5f} segundos.')
 print(f'\nRMSE: {-rmse_tree_cv.mean()}')
 print(f'MAE: {-mae_tree_cv.mean()}')
 
@@ -436,8 +437,8 @@ dummy_2_tree.fit(X_train_train, y_train_train)
 end = time.time()
 time_tree_dm2 = end - start
 
-print(f'Tiempo de entrenamiento (mean): {time_tree_dm1:.5f}')
-print(f'Tiempo de entrenamiento (median): {time_tree_dm2:.5f}')
+print(f'Tiempo de entrenamiento (mean): {time_tree_dm1:.5f} segundos.')
+print(f'Tiempo de entrenamiento (median): {time_tree_dm2:.5f} segundos.')
 
 # Predicciones del conjunto de test.
 y_pred_dummy_1 = dummy_1_tree.predict(X_train_test)
@@ -474,7 +475,7 @@ start = time.time()
 base_linear.fit(X_train_train_n, y_train_train_n)
 end = time.time()
 time_linear = end - start
-print(f'Tiempo de entrenamiento: {time_linear:.5f}')
+print(f'Tiempo de entrenamiento: {time_linear:.5f} segundos.')
 
 # Predicciones del conjunto de test.
 y_pred_n = base_linear.predict(X_train_test_n)
@@ -516,8 +517,8 @@ scores = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_me
 end = time.time()
 time2_linear_cv = end - start
 
-print(f'Tiempo de entrenamiento (RMSE): {time1_linear_cv:.5f}')
-print(f'Tiempo de entrenamiento (MAE): {time2_linear_cv:.5f}')
+print(f'Tiempo de entrenamiento (RMSE): {time1_linear_cv:.5f} segundos.')
+print(f'Tiempo de entrenamiento (MAE): {time2_linear_cv:.5f} segundos.')
 print(f'\nRMSE: {-scores.mean()}')
 print(f'RMSE: {-scores.mean()}')
 
@@ -538,8 +539,8 @@ dummy_2_linear.fit(X_train_train_n, y_train_train_n)
 end = time.time()
 time_linear_dm2 = end - start
 
-print(f'Tiempo de entrenamiento (mean): {time_linear_dm1:.5f}')
-print(f'Tiempo de entrenamiento (median): {time_linear_dm2:.5f}')
+print(f'Tiempo de entrenamiento (mean): {time_linear_dm1:.5f} segundos.')
+print(f'Tiempo de entrenamiento (median): {time_linear_dm2:.5f} segundos.')
 
 # Predicciones del conjunto de test.
 y_pred_dummy_1_n = dummy_1_linear.predict(X_train_test_n).reshape(-1, 1)
@@ -615,7 +616,7 @@ y_pred_n = best_model.predict(X_train_test_n)
 y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
-# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
 rmse_knn_a = rmse(y_train_test, y_pred)
 print(f'\nRMSE: {rmse_knn_a}')
 
@@ -783,10 +784,10 @@ print()
 
 print('[bold red]' + '-' * 60 +'\nReducción de dimensionalidad.\n' + '-' * 60 + '[/bold red]')
 
-# quitamos del dataframe de las medias de las variables las variables que no queremos usar.
-df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media'], axis=1)
+# Quitamos del dataframe de las medias de las variables que no queremos usar.
+df_reducida = mean_df.drop(['apcp_sf_media', 'pres_msl_media', 'tcdc_eatm_media', 'tcolc_eatm_media'], axis=1)
 
-# imprimimos el dataframe reducido.
+# Imprimimos el dataframe reducido.
 print(df_reducida)
 
 print(df_reducida.shape)
@@ -814,37 +815,51 @@ y_test_r_n = scaler.transform(y_test_r.values.reshape(-1, 1))
 # Entrenamos a los modelos Knn, Árbol de decisión y Regresión lineal con el dataframe reducido y con los mejores hiperparametros.
 
 # KNN.
-print('\n[bold yellow]KNN\n-----[/bold yellow]')
+print('\n[bold green]KNN\n-----[/bold green]')
 knn_model_r = KNeighborsRegressor(leaf_size=1, metric='euclidean', n_neighbors=8, weights='distance')
+start = time.time()
 knn_model_r.fit(X_train_train_r_n, y_train_train_r_n)
-knn_preds_r = knn_model_r.predict(X_train_test_r_n)
-mae_knn_r = mae(y_train_test_r_n, knn_preds_r)
-rmse_knn_r = rmse(y_train_test_r_n, knn_preds_r)
+end = time.time()
+time_knn_r = end - start
+print(f'Tiempo de entrenamiento: {time_knn_r:.5f} segundos.')
+knn_preds_r_n = knn_model_r.predict(X_train_test_r_n)
+knn_preds_r = scaler.inverse_transform(knn_preds_r_n)
+mae_knn_r = mae(y_train_test_r, knn_preds_r)
+rmse_knn_r = rmse(y_train_test_r, knn_preds_r)
 
-print(f'\nError cuadrático medio del modelo KNN: {rmse_knn_r}')
-print(f'\nError absoluto medio del modelo KNN: {mae_knn_r}')
+print(f'\nRMSE: {rmse_knn_r}')
+print(f'MAE: {mae_knn_r}')
 
 # Arbol de decisión.
-print('\n[bold yellow]Árbol de decisión\n-----[/bold yellow]')
+print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
 tree_model_r = DecisionTreeRegressor(max_depth=8, min_samples_leaf=10, min_samples_split=7)
+start = time.time()
 tree_model_r.fit(X_train_train_r, y_train_train_r)
+end = time.time()
+time_tree_r = end - start
+print(f'Tiempo de entrenamiento: {time_tree_r:.5f} segundos.')
 tree_preds_r = tree_model_r.predict(X_train_test_r)
 mae_tree_r = mae(y_train_test_r, tree_preds_r)
 rmse_tree_r = rmse(y_train_test_r, tree_preds_r)
 
-print(f'\nError cuadrático medio del modelo Árbol de decisión: {rmse_tree_r}')
-print(f'\nError absoluto medio del modelo Árbol de decisión: {mae_tree_r}')
+print(f'\nRMSE: {rmse_tree_r}')
+print(f'MAE: {mae_tree_r}')
 
 # Regresión lineal.
 print('\n[bold green]Regresión lineal\n------------------[/bold green]')
 linear_model_r = LinearRegression(fit_intercept=True, positive=False)
+start = time.time()
 linear_model_r.fit(X_train_train_r_n, y_train_train_r_n)
-linear_preds_r = linear_model_r.predict(X_train_test_r_n)
-mae_linear_r = mae(y_train_test_r_n, linear_preds_r)
-rmse_linear_r = rmse(y_train_test_r_n, linear_preds_r)
+end = time.time()
+time_linear_r = end - start
+print(f'Tiempo de entrenamiento: {time_linear_r:.5f} segundos.')
+linear_preds_r_n = linear_model_r.predict(X_train_test_r_n)
+linear_preds_r = scaler.inverse_transform(linear_preds_r_n)
+mae_linear_r = mae(y_train_test_r, linear_preds_r)
+rmse_linear_r = rmse(y_train_test_r, linear_preds_r)
 
-print(f'\nError cuadrático medio del modelo Regresión lineal: {rmse_linear_r}')
-print(f'\nError absoluto medio del modelo Regresión lineal: {mae_linear_r}')
+print(f'\nRMSE: {rmse_linear_r}')
+print(f'MAE: {mae_linear_r}')
 
 print("\nREVISAR ERRORES (DESNORMALIZAR) Y ESTRATEGIA PORQUE MUCHO ERROR\n")
 
@@ -854,31 +869,38 @@ print("\nREVISAR ERRORES (DESNORMALIZAR) Y ESTRATEGIA PORQUE MUCHO ERROR\n")
 
 print('[bold red]' + '-' * 60 +'\nEvaluación de métodos avanzados sin ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
+# SVM
 print('\n[bold yellow]SVM\n-----[/bold yellow]')
 
-# SVM
 svm_model = SVR()
+start = time.time()
 svm_model.fit(X_train_train_n, y_train_train_n.ravel())
+end = time.time()
+time_svm = end - start
+print(f'Tiempo de entrenamiento: {time_svm:.5f} segundos.')
 svm_preds = svm_model.predict(X_train_test_n)
 mae_svm = mae(y_train_test_n, svm_preds)
 rmse_svm = rmse(y_train_test_n, svm_preds)
 
-print(f'\nError absoluto medio del modelo SVM: {mae_svm}')
-print(f'\nError cuadrático medio del modelo SVM: {rmse_svm}')
+print(f'\nMAE: {mae_svm}')
+print(f'\nRMSE: {rmse_svm}')
 
-
-
-print('\n[bold yellow]Random Forests\n---------------[/bold yellow]')
 
 # Random Forest
+print('\n[bold yellow]Random Forests\n---------------[/bold yellow]')
+
 rf_model = RandomForestRegressor()
+start = time.time()
 rf_model.fit(X_train_train_n, y_train_train_n.ravel())
+end = time.time()
+time_forest= end - start
+print(f'Tiempo de entrenamiento: {time_forest:.5f} segundos.')
 rf_preds = rf_model.predict(X_train_test_n)
 mae_rf = mae(y_train_test_n, rf_preds)
 rmse_rf = rmse(y_train_test_n, rf_preds)
 
-print(f'\nError absoluto medio del modelo Random Forests: {mae_rf}')
-print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf}')
+print(f'\nMAE: {mae_rf}')
+print(f'\nRMSE: {rmse_rf}')
 
 #------------------------------------------------------------
 '''Evaluación de modelos avanzados con ajuste de hp.'''
@@ -902,14 +924,18 @@ svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                 }
 
 svm_grid = GridSearchCV(svm_model, svm_params, cv=ps, n_jobs=-1, verbose=1)
+start = time.time()
 svm_grid.fit(X_train_n, y_train_n.ravel())
+end = time.time()
+time_svm_a = end - start
+print(f'Tiempo de entrenamiento: {time_svm_a:.5f} segundos.')
 print("Mejores hiperparámetros:",svm_grid.best_params_)
 svm_preds = svm_grid.predict(X_train_test_n)
 mae_svm_a = mae(y_train_test_n, svm_preds)
 rmse_svm_a = rmse(y_train_test_n, svm_preds)
 
-print(f'\nError absoluto medio del modelo SVM: {mae_svm_a}')
-print(f'\nError cuadrático medio del modelo SVM: {rmse_svm_a}')
+print(f'\nMAE: {mae_svm_a}')
+print(f'\nRMSE: {rmse_svm_a}')
 
 print('\n[bold blue]Random Forests\n---------------[/bold blue]')
 
@@ -933,14 +959,18 @@ rf_params = {   'n_estimators': [100, 200, 300, 400, 500],
                 }
 
 rf_grid = GridSearchCV(rf_model, rf_params, cv=ps, n_jobs=-1, verbose=1)
+start = time.time()
 rf_grid.fit(X_train_n, y_train_n.ravel())
+end = time.time()
+time_forest_a = end - start
+print(f'Tiempo de entrenamiento: {time_forest_a:.5f} segundos.')
 print("Mejores hiperparámetros:",rf_grid.best_params_)
 rf_preds = rf_grid.predict(X_train_test_n)
 mae_rf_a = mae(y_train_test_n, rf_preds)
 rmse_rf_a = rmse(y_train_test_n, rf_preds)
 
-print(f'\nError absoluto medio del modelo Random Forests: {mae_rf_a}')
-print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf_a}')
+print(f'\nMAE: {mae_rf_a}')
+print(f'\nRMSE: {rmse_rf_a}')
 
 #------------------------------------------------------------
 '''Comparación de modelos avanzado y resultados.'''
