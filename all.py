@@ -887,10 +887,77 @@ print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf}')
 print('[bold red]' + '-' * 60 +'\nEvaluación de modelos avanzados con ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
 print('\n[bold blue]SVMs\n-----[/bold blue]')
+#ajuste de hiperparametros
+svm_model = SVR()
+svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+                'C': [0.1, 1, 10, 100, 1000],
+                #'gamma': ['scale', 'auto'],
+                #'degree': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                #'coef0': [0.1, 0.5, 1, 2, 5, 10],
+                #'epsilon': [0.1, 0.5, 1, 2, 5, 10],
+                #'shrinking': [True, False],
+                #'tol': [0.001, 0.0001, 0.00001],
+                #'cache_size': [200, 500, 1000],
+                #'max_iter': [-1, 1000, 2000, 5000, 10000]
+                }
 
-print('[bold blue]Random Forests\n---------------[/bold blue]')
+svm_grid = GridSearchCV(svm_model, svm_params, cv=ps, n_jobs=-1, verbose=1)
+svm_grid.fit(X_train_n, y_train_n.ravel())
+print("Mejores hiperparámetros:",svm_grid.best_params_)
+svm_preds = svm_grid.predict(X_train_test_n)
+mae_svm_a = mae(y_train_test_n, svm_preds)
+rmse_svm_a = rmse(y_train_test_n, svm_preds)
 
+print(f'\nError absoluto medio del modelo SVM: {mae_svm_a}')
+print(f'\nError cuadrático medio del modelo SVM: {rmse_svm_a}')
 
+print('\n[bold blue]Random Forests\n---------------[/bold blue]')
+
+#ajuste de hiperparametros
+rf_model = RandomForestRegressor()
+rf_params = {   'n_estimators': [100, 200, 300, 400, 500],
+                #'n_estimators': [100, 200, 500],
+                #'max_depth': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                'max_depth': [None, 1, 2, 3, 4, 5],
+                #'max_depth': [None, 2, 5, 10],
+                #'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
+                #'min_samples_leaf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                #'max_features': ['auto', 'sqrt', 'log2'],
+                #'max_leaf_nodes': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                #'min_impurity_decrease': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                'bootstrap': [True, False],
+                #'oob_score': [True, False],
+                #'warm_start': [True, False],
+                #'ccp_alpha': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                #'max_samples': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                }
+
+rf_grid = GridSearchCV(rf_model, rf_params, cv=ps, n_jobs=-1, verbose=1)
+rf_grid.fit(X_train_n, y_train_n.ravel())
+print("Mejores hiperparámetros:",rf_grid.best_params_)
+rf_preds = rf_grid.predict(X_train_test_n)
+mae_rf_a = mae(y_train_test_n, rf_preds)
+rmse_rf_a = rmse(y_train_test_n, rf_preds)
+
+print(f'\nError absoluto medio del modelo Random Forests: {mae_rf_a}')
+print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf_a}')
+
+#------------------------------------------------------------
+'''Comparación de modelos avanzado y resultados.'''
+#------------------------------------------------------------
+
+print('[bold red]' + '-' * 60 +'\nComparación de modelos avanzado y resultados.\n' + '-' * 60 + '[/bold red]')
+print('\n[bold blue]SVMs\n-----[/bold blue]')
+print(f'\nError absoluto medio del modelo SVM: {mae_svm}')
+print(f'\nError cuadrático medio del modelo SVM: {rmse_svm}')
+
+print(f'\nRatio de mejora del error absoluto medio del modelo SVM: {mae_svm/mae_svm_a}')
+
+print('\n[bold blue]Random Forests\n---------------[/bold blue]')
+print(f'\nError absoluto medio del modelo Random Forests: {mae_rf}')
+print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf}')
+
+print(f'\nRatio de mejora del error absoluto medio del modelo Random Forests: {mae_rf/mae_rf_a}')
 
 #------------------------------------------------------------
 '''Modelo final.'''
