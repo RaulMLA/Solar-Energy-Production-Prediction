@@ -583,11 +583,12 @@ print('\n[bold blue]KNN\n----[/bold blue]')
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
-    'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8],
+    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8],
+    'n_neighbors': [1, 2, 5, 8, 10, 15, 20, 40],
     #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'weights': ['uniform', 'distance'],
     'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
-    'leaf_size': [1, 2, 3, 5, 10, 30, 50, 100]
+    'leaf_size': [1, 2, 5, 10, 100]
     #'leaf_size': list(range(1,50))
 }
 
@@ -610,7 +611,7 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred_n = best_model.predict(X_train_test_n)
+y_pred = best_model.predict(X_train_test_n)
 
 # Denormalizar la predicción del modelo.
 y_pred = scaler.inverse_transform(y_pred_n)
@@ -636,10 +637,10 @@ print('\n[bold blue]Árbol de decisión\n------------------[/bold blue]')
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
-    'max_depth': [1, 2, 3, 4, 5, 6, 7, 8],
+    'max_depth': [1, 2, 5, 8, 10, 15, 20, 40],
     #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
-    'min_samples_leaf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    'min_samples_leaf': [1, 2, 5, 8, 10, 15, 20, 40],
 }
 
 # Definimos el modelo.
@@ -742,10 +743,14 @@ print('\n[bold green]KNN\n----[/bold green]')
 print('MAE sin ajustar:', mae_knn)
 print('MAE ajustado:', mae_knn_a)
 print('MAE ratio KNN/knn_adjusted:', mae_knn/mae_knn_a)
+print(f'MAE dummy (mean)/MAE KNN: {mae_knn_dm1/mae_knn_a}')
+print(f'MAE dummy (median)/MAE KNN: {mae_knn_dm2/mae_knn_a}')
 
 print('\nRMSE sin ajustar:', rmse_knn)
 print('RMSE ajustado:', rmse_knn_a)
 print('RMSE ratio KNN/knn_adjusted:', rmse_knn/rmse_knn_a)
+print(f'\nRMSE dummy (mean)/RMSE KNN: {rmse_knn_dm1/rmse_knn_a}')
+print(f'RMSE dummy (median)/RMSE KNN: {rmse_knn_dm2/rmse_knn_a}')
 
 
 # Arbol de decisión.
@@ -754,12 +759,14 @@ print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
 print('MAE sin ajustar:', mae_tree)
 print('MAE ajustado:', mae_tree_a)
 print('MAE ratio tree/tree_adjusted:', mae_tree/mae_tree_a)
-print('MAE ratio dummy/tree_adjusted:', mae_linear_dm1/mae_tree_a)
+print(f'MAE dummy (mean)/MAE tree: {mae_tree_dm1/mae_tree_a}')
+print(f'MAE dummy (median)/MAE tree: {mae_tree_dm2/mae_tree_a}')
 
 print('\nRMSE sin ajustar:', rmse_tree)
 print('RMSE ajustado:', rmse_tree_a)
 print('RMSE ratio tree/tree_adjusted:', rmse_tree/rmse_tree_a)
-print('RMSE ratio dummy/tree_adjusted:', mae_linear_dm2/rmse_tree_a)
+print(f'\nRMSE dummy (mean)/RMSE tree: {rmse_tree_dm1/rmse_tree_a}')
+print(f'RMSE dummy (median)/RMSE tree: {rmse_tree_dm2/rmse_tree_a}')
 
 
 # Regresión lineal.
@@ -768,11 +775,14 @@ print('\n[bold green]Regresión lineal\n------------------[/bold green]')
 print('MAE sin ajustar:', mae_linear)
 print('MAE ajustado:', mae_linear_a)
 print('MAE ratio linear/linear_adjusted:', mae_linear/mae_linear_a)
-#print('(NO VALIDO POR NORMALIZACIÓN) MAE ratio dummy/linear_adjusted:', mae_dummy_linear/mae_linear_adjusted)
+print(f'\nMAE dummy (mean)/MAE linear: {mae_linear_dm1/mae_linear_a}')
+print(f'MAE dummy (median)/MAE linear: {mae_linear_dm2/mae_linear_a}')
 
 print('\nRMSE sin ajustar:', rmse_linear)
 print('RMSE ajustado:',rmse_linear_a)
 print('RMSE ratio linear/linear_adjusted:', rmse_linear/rmse_linear_a)
+print(f'\nRMSE dummy (mean)/RMSE linear: {rmse_linear_dm1/rmse_linear_a}')
+print(f'RMSE dummy (median)/RMSE linear: {rmse_linear_dm2/rmse_linear_a}')
 
 print()
 
@@ -799,18 +809,18 @@ X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(df_reducida.drop('sa
 X_train_train_r, X_train_test_r, y_train_train_r, y_train_test_r = train_test_split(X_train_r, y_train_r, test_size=3/10, random_state=13, shuffle=False)
 
 # Normalizamos los datos.
-scaler = StandardScaler()
-scaler.fit(X_train_train_r)
-X_train_train_r_n = scaler.transform(X_train_train_r)
-X_train_test_r_n = scaler.transform(X_train_test_r)
-X_test_r_n = scaler.transform(X_test_r)
+scaler_r = StandardScaler()
+scaler_r.fit(X_train_train_r)
+X_train_train_r_n = scaler_r.transform(X_train_train_r)
+X_train_test_r_n = scaler_r.transform(X_train_test_r)
+X_test_r_n = scaler_r.transform(X_test_r)
 
 # Normalizamos la salida.
-scaler = StandardScaler()
-scaler.fit(y_train_train_r.values.reshape(-1, 1))
-y_train_train_r_n = scaler.transform(y_train_train_r.values.reshape(-1, 1))
-y_train_test_r_n = scaler.transform(y_train_test_r.values.reshape(-1, 1))
-y_test_r_n = scaler.transform(y_test_r.values.reshape(-1, 1))
+scaler_r = StandardScaler()
+scaler_r.fit(y_train_train_r.values.reshape(-1, 1))
+y_train_train_r_n = scaler_r.transform(y_train_train_r.values.reshape(-1, 1))
+y_train_test_r_n = scaler_r.transform(y_train_test_r.values.reshape(-1, 1))
+y_test_r_n = scaler_r.transform(y_test_r.values.reshape(-1, 1))
 
 # Entrenamos a los modelos Knn, Árbol de decisión y Regresión lineal con el dataframe reducido y con los mejores hiperparametros.
 
@@ -823,7 +833,7 @@ end = time.time()
 time_knn_r = end - start
 print(f'Tiempo de entrenamiento: {time_knn_r:.5f} segundos.')
 knn_preds_r_n = knn_model_r.predict(X_train_test_r_n)
-knn_preds_r = scaler.inverse_transform(knn_preds_r_n)
+knn_preds_r = scaler_r.inverse_transform(knn_preds_r_n)
 mae_knn_r = mae(y_train_test_r, knn_preds_r)
 rmse_knn_r = rmse(y_train_test_r, knn_preds_r)
 
@@ -854,7 +864,7 @@ end = time.time()
 time_linear_r = end - start
 print(f'Tiempo de entrenamiento: {time_linear_r:.5f} segundos.')
 linear_preds_r_n = linear_model_r.predict(X_train_test_r_n)
-linear_preds_r = scaler.inverse_transform(linear_preds_r_n)
+linear_preds_r = scaler_r.inverse_transform(linear_preds_r_n)
 mae_linear_r = mae(y_train_test_r, linear_preds_r)
 rmse_linear_r = rmse(y_train_test_r, linear_preds_r)
 
@@ -879,8 +889,9 @@ end = time.time()
 time_svm = end - start
 print(f'Tiempo de entrenamiento: {time_svm:.5f} segundos.')
 svm_preds = svm_model.predict(X_train_test_n)
-mae_svm = mae(y_train_test_n, svm_preds)
-rmse_svm = rmse(y_train_test_n, svm_preds)
+svm_preds = scaler.inverse_transform(svm_preds.reshape(-1,1))
+mae_svm = mae(y_train_test, svm_preds)
+rmse_svm = rmse(y_train_test, svm_preds)
 
 print(f'\nMAE: {mae_svm}')
 print(f'\nRMSE: {rmse_svm}')
@@ -896,8 +907,9 @@ end = time.time()
 time_forest= end - start
 print(f'Tiempo de entrenamiento: {time_forest:.5f} segundos.')
 rf_preds = rf_model.predict(X_train_test_n)
-mae_rf = mae(y_train_test_n, rf_preds)
-rmse_rf = rmse(y_train_test_n, rf_preds)
+rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
+mae_rf = mae(y_train_test, rf_preds)
+rmse_rf = rmse(y_train_test, rf_preds)
 
 print(f'\nMAE: {mae_rf}')
 print(f'\nRMSE: {rmse_rf}')
@@ -912,11 +924,11 @@ print('\n[bold blue]SVMs\n-----[/bold blue]')
 #ajuste de hiperparametros
 svm_model = SVR()
 svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
-                'C': [0.1, 1, 10, 100, 1000],
+                'C': [0.1, 1, 2, 3],
                 #'gamma': ['scale', 'auto'],
-                #'degree': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                #'coef0': [0.1, 0.5, 1, 2, 5, 10],
-                #'epsilon': [0.1, 0.5, 1, 2, 5, 10],
+                'degree': [1, 2, 5],
+                'coef0': [0.1, 0.5, 1, 5],
+                'epsilon': [0.1, 0.5, 1, 2, 5, 10],
                 #'shrinking': [True, False],
                 #'tol': [0.001, 0.0001, 0.00001],
                 #'cache_size': [200, 500, 1000],
@@ -931,8 +943,9 @@ time_svm_a = end - start
 print(f'Tiempo de entrenamiento: {time_svm_a:.5f} segundos.')
 print("Mejores hiperparámetros:",svm_grid.best_params_)
 svm_preds = svm_grid.predict(X_train_test_n)
-mae_svm_a = mae(y_train_test_n, svm_preds)
-rmse_svm_a = rmse(y_train_test_n, svm_preds)
+svm_preds = scaler.inverse_transform(svm_preds.reshape(-1,1))
+mae_svm_a = mae(y_train_test, svm_preds)
+rmse_svm_a = rmse(y_train_test, svm_preds)
 
 print(f'\nMAE: {mae_svm_a}')
 print(f'\nRMSE: {rmse_svm_a}')
@@ -941,13 +954,13 @@ print('\n[bold blue]Random Forests\n---------------[/bold blue]')
 
 #ajuste de hiperparametros
 rf_model = RandomForestRegressor()
-rf_params = {   'n_estimators': [100, 200, 300, 400, 500],
+rf_params = {   'n_estimators': [100, 200, 400, 500],
                 #'n_estimators': [100, 200, 500],
                 #'max_depth': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                'max_depth': [None, 1, 2, 3, 4, 5],
+                'max_depth': [None, 1, 2, 5],
                 #'max_depth': [None, 2, 5, 10],
-                #'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
-                #'min_samples_leaf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                'min_samples_split': [1, 2, 3],
+                'min_samples_leaf': [1, 2, 5, 10],
                 #'max_features': ['auto', 'sqrt', 'log2'],
                 #'max_leaf_nodes': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 #'min_impurity_decrease': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
@@ -966,8 +979,9 @@ time_forest_a = end - start
 print(f'Tiempo de entrenamiento: {time_forest_a:.5f} segundos.')
 print("Mejores hiperparámetros:",rf_grid.best_params_)
 rf_preds = rf_grid.predict(X_train_test_n)
-mae_rf_a = mae(y_train_test_n, rf_preds)
-rmse_rf_a = rmse(y_train_test_n, rf_preds)
+rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
+mae_rf_a = mae(y_train_test, rf_preds)
+rmse_rf_a = rmse(y_train_test, rf_preds)
 
 print(f'\nMAE: {mae_rf_a}')
 print(f'\nRMSE: {rmse_rf_a}')
