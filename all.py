@@ -924,11 +924,11 @@ print('\n[bold blue]SVMs\n-----[/bold blue]')
 #ajuste de hiperparametros
 svm_model = SVR()
 svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
-                'C': [0.1, 1, 2, 3],
+                'C': [0.1, 0,5, 1, 2],
                 #'gamma': ['scale', 'auto'],
-                'degree': [1, 2, 5],
-                'coef0': [0.1, 0.5, 1, 5],
-                'epsilon': [0.1, 0.5, 1, 2, 5, 10],
+                'degree': [1, 2, 3],
+                'coef0': [0.1, 0.5, 1],
+                'epsilon': [0.1, 0.5, 1, 5],
                 #'shrinking': [True, False],
                 #'tol': [0.001, 0.0001, 0.00001],
                 #'cache_size': [200, 500, 1000],
