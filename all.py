@@ -588,8 +588,9 @@ param_grid = {
     #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'weights': ['uniform', 'distance'],
     'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
-    'leaf_size': [1, 2, 5, 10, 100]
+    'leaf_size': [1, 2, 5, 10, 20, 30, 100],
     #'leaf_size': list(range(1,50))
+    'p':[1, 2]
 }
 
 # Definimos el modelo.
@@ -611,10 +612,10 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred = best_model.predict(X_train_test_n)
+y_pred_n = best_model.predict(X_train_test_n)
 
 # Denormalizar la predicción del modelo.
-y_pred = scaler.inverse_transform(y_pred_n)
+y_pred = scaler.inverse_transform(y_pred_n.reshape(-1, 1)).ravel()
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
@@ -795,7 +796,8 @@ print()
 print('[bold red]' + '-' * 60 +'\nReducción de dimensionalidad.\n' + '-' * 60 + '[/bold red]')
 
 # Quitamos del dataframe de las medias de las variables que no queremos usar.
-df_reducida = mean_df.drop(['apcp_sf_media', 'pres_msl_media', 'tcdc_eatm_media', 'tcolc_eatm_media'], axis=1)
+#df_reducida = mean_df.drop(['apcp_sf_media', 'pres_msl_media', 'tcdc_eatm_media', 'tcolc_eatm_media'], axis=1)
+df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media', 'spfh_2m_media', 'pwat_eatm_media'], axis=1)
 
 # Imprimimos el dataframe reducido.
 print(df_reducida)
@@ -809,15 +811,17 @@ X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(df_reducida.drop('sa
 X_train_train_r, X_train_test_r, y_train_train_r, y_train_test_r = train_test_split(X_train_r, y_train_r, test_size=3/10, random_state=13, shuffle=False)
 
 # Normalizamos los datos.
-scaler_r = StandardScaler()
+scaler_r = MinMaxScaler()
 scaler_r.fit(X_train_train_r)
+X_train_r_n = scaler_r.transform(X_train_r)
 X_train_train_r_n = scaler_r.transform(X_train_train_r)
 X_train_test_r_n = scaler_r.transform(X_train_test_r)
 X_test_r_n = scaler_r.transform(X_test_r)
 
 # Normalizamos la salida.
-scaler_r = StandardScaler()
+scaler_r = MinMaxScaler()
 scaler_r.fit(y_train_train_r.values.reshape(-1, 1))
+y_train_r_n = scaler_r.transform(y_train_r.values.reshape(-1, 1))
 y_train_train_r_n = scaler_r.transform(y_train_train_r.values.reshape(-1, 1))
 y_train_test_r_n = scaler_r.transform(y_train_test_r.values.reshape(-1, 1))
 y_test_r_n = scaler_r.transform(y_test_r.values.reshape(-1, 1))
@@ -826,7 +830,7 @@ y_test_r_n = scaler_r.transform(y_test_r.values.reshape(-1, 1))
 
 # KNN.
 print('\n[bold green]KNN\n-----[/bold green]')
-knn_model_r = KNeighborsRegressor(leaf_size=1, metric='euclidean', n_neighbors=8, weights='distance')
+knn_model_r = KNeighborsRegressor()
 start = time.time()
 knn_model_r.fit(X_train_train_r_n, y_train_train_r_n)
 end = time.time()
@@ -840,9 +844,56 @@ rmse_knn_r = rmse(y_train_test_r, knn_preds_r)
 print(f'\nRMSE: {rmse_knn_r}')
 print(f'MAE: {mae_knn_r}')
 
+#ajuste de hiperparametros
+print('\n[bold green]Ajuste de hiperparámetros KNN\n---------------------------[/bold green]')
+
+# Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
+param_grid = {
+    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8],
+    'n_neighbors': [1, 2, 5, 8, 10, 15, 20, 40],
+    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+    'weights': ['uniform', 'distance'],
+    'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
+    'leaf_size': [1, 2, 5, 10, 100]
+    #'leaf_size': list(range(1,50))
+}
+
+# Definimos el modelo.
+model = KNeighborsRegressor()
+
+# Definimos el grid search.
+grid = GridSearchCV(estimator=model,
+                    param_grid=param_grid,
+                    cv=ps,
+                    scoring='neg_mean_absolute_error',
+                    verbose=1,
+                    n_jobs=-1)
+
+# Entrenamos el grid search.
+grid_result = grid.fit(X_train_r_n, y_train_r_n)
+
+# Mejores hiperparámetros.
+print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
+
+# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
+best_model = grid_result.best_estimator_
+y_pred_n = best_model.predict(X_train_test_r_n)
+
+# Denormalizar la predicción del modelo.
+y_pred = scaler_r.inverse_transform(y_pred_n)
+
+# Calcular el error cuadrático medio en la escala original.
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
+rmse_knn_a_r = rmse(y_train_test_r, y_pred)
+print(f'\nRMSE ajustado: {rmse_knn_a_r}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_knn_a_r = mae(y_train_test_r, y_pred)
+print(f'MAE ajustado: {mae_knn_a_r}')
+
 # Arbol de decisión.
 print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
-tree_model_r = DecisionTreeRegressor(max_depth=8, min_samples_leaf=10, min_samples_split=7)
+tree_model_r = DecisionTreeRegressor()
 start = time.time()
 tree_model_r.fit(X_train_train_r, y_train_train_r)
 end = time.time()
@@ -855,9 +906,49 @@ rmse_tree_r = rmse(y_train_test_r, tree_preds_r)
 print(f'\nRMSE: {rmse_tree_r}')
 print(f'MAE: {mae_tree_r}')
 
+#ajuste de hiperparametros
+print('\n[bold green]Ajuste de hiperparámetros Árbol de decisión\n---------------------------[/bold green]')
+# Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
+param_grid = {
+    'max_depth': [1, 2, 5, 8, 10, 15, 20, 40],
+    #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+    'min_samples_split': [1, 2, 3, 5, 7, 8, 9, 10],
+    'min_samples_leaf': [1, 2, 5, 8, 10, 15, 20, 40, 50, 70, 100],
+}
+
+# Definimos el modelo.
+model = DecisionTreeRegressor()
+
+# Definimos el grid search.
+grid = GridSearchCV(estimator=model,
+                    param_grid=param_grid,
+                    cv=ps,
+                    scoring='neg_mean_absolute_error',
+                    verbose=1,
+                    n_jobs=-1)
+
+# Entrenamos el grid search.
+grid_result = grid.fit(X_train_r, y_train_r)
+
+# Mejores hiperparámetros.
+print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
+
+# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba.
+best_model = grid_result.best_estimator_
+y_pred = best_model.predict(X_train_test_r)
+
+# Calcular el error cuadrático medio en la escala original.
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
+rmse_tree_a_r = rmse(y_train_test_r, y_pred)
+print(f'\nRMSE ajustado: {rmse_tree_a_r}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_tree_a_r = mae(y_train_test_r, y_pred)
+print(f'MAE ajustado: {mae_tree_a_r}')
+
 # Regresión lineal.
 print('\n[bold green]Regresión lineal\n------------------[/bold green]')
-linear_model_r = LinearRegression(fit_intercept=True, positive=False)
+linear_model_r = LinearRegression()
 start = time.time()
 linear_model_r.fit(X_train_train_r_n, y_train_train_r_n)
 end = time.time()
@@ -871,7 +962,46 @@ rmse_linear_r = rmse(y_train_test_r, linear_preds_r)
 print(f'\nRMSE: {rmse_linear_r}')
 print(f'MAE: {mae_linear_r}')
 
+#ajuste de hiperparametros
+print('\n[bold green]Ajuste de hiperparámetros Regresión lineal\n---------------------------[/bold green]')
+# Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
+param_grid = {
+    'fit_intercept':  [True, False],
+    'positive': [True, False],
+}
+
+# Definimos el modelo.
+model = LinearRegression()
+
+# Definimos el grid search.
+grid = GridSearchCV(estimator=model,
+                    param_grid=param_grid,
+                    cv=ps,
+                    scoring='neg_mean_absolute_error',
+                    verbose=1,
+                    n_jobs=-1)
+
+# Entrenamos el grid search.
+grid_result = grid.fit(X_train_r_n, y_train_r_n)
+
+# Mejores hiperparámetros.
+print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
+
+# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba.
+best_model = grid_result.best_estimator_
+y_pred = best_model.predict(X_train_test_r_n)
+
+# Calcular el error cuadrático medio en la escala original.
+# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
+rmse_linear_a_r = rmse(y_train_test_r, y_pred)
+print(f'\nRMSE ajustado: {rmse_linear_a_r}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_linear_a_r = mae(y_train_test_r, y_pred)
+print(f'MAE ajustado: {mae_linear_a_r}')
+
 print("\nREVISAR ERRORES (DESNORMALIZAR) Y ESTRATEGIA PORQUE MUCHO ERROR\n")
+
 
 #------------------------------------------------------------
 '''Evaluación de métodos avanzados sin ajuste de hp.'''
@@ -924,13 +1054,13 @@ print('\n[bold blue]SVMs\n-----[/bold blue]')
 #ajuste de hiperparametros
 svm_model = SVR()
 svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
-                'C': [0.1, 0,5, 1, 2],
-                #'gamma': ['scale', 'auto'],
+                'C': [0.1, 0.5, 1, 2],
+                'gamma': ['scale', 'auto'],
                 'degree': [1, 2, 3],
                 'coef0': [0.1, 0.5, 1],
                 'epsilon': [0.1, 0.5, 1, 5],
                 #'shrinking': [True, False],
-                #'tol': [0.001, 0.0001, 0.00001],
+                'tol': [0.001, 0.0001, 0.00001],
                 #'cache_size': [200, 500, 1000],
                 #'max_iter': [-1, 1000, 2000, 5000, 10000]
                 }
@@ -959,11 +1089,11 @@ rf_params = {   'n_estimators': [100, 200, 400, 500],
                 #'max_depth': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 'max_depth': [None, 1, 2, 5],
                 #'max_depth': [None, 2, 5, 10],
-                'min_samples_split': [1, 2, 3],
-                'min_samples_leaf': [1, 2, 5, 10],
+                #'min_samples_split': [1, 2, 3],
+                #'min_samples_leaf': [1, 5, 10],
                 #'max_features': ['auto', 'sqrt', 'log2'],
                 #'max_leaf_nodes': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                #'min_impurity_decrease': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                #'min_impurity_decrease': [0.0, 0.2, 0.4, 0.5, 0.9],
                 'bootstrap': [True, False],
                 #'oob_score': [True, False],
                 #'warm_start': [True, False],
