@@ -38,6 +38,11 @@ from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import accuracy_score
 
+#PCA
+from sklearn.pipeline import Pipeline
+from sklearn.feature_selection import SelectKBest, f_regression
+from pprint import pprint
+
 # Prints de colores.
 from rich import print
 
@@ -160,7 +165,7 @@ plt.clf()
 '''
 
 # Correlación entre variables meteorológicas.
-
+"""
 sns.set_theme(style='white')
 
 # Computar la matriz de correlación de la media de las variables meteorológicas.
@@ -189,7 +194,7 @@ plt.savefig('correlacion.jpg')
 print()
 
 
-
+"""
 #------------------------------------------------------------
 '''División de los datos en entrenamiento y test.'''
 #------------------------------------------------------------
@@ -797,8 +802,10 @@ print('[bold red]' + '-' * 60 +'\nReducción de dimensionalidad.\n' + '-' * 60 +
 
 # Quitamos del dataframe de las medias de las variables que no queremos usar.
 #df_reducida = mean_df.drop(['apcp_sf_media', 'pres_msl_media', 'tcdc_eatm_media', 'tcolc_eatm_media'], axis=1)
-df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media', 'spfh_2m_media', 'pwat_eatm_media'], axis=1)
+#df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media', 'spfh_2m_media', 'pwat_eatm_media'], axis=1)
+df_reducida=mean_df
 
+#df_reducida=disp_df.drop(['tmin_2m1_1', 'tmin_2m2_1', 'tmin_2m3_1', 'tmin_2m4_1', 'tmin_2m5_1', 'tmp_2m_1_1', 'tmp_2m_2_1', 'tmp_2m_3_1', 'tmp_2m_4_1', 'tmp_2m_5_1', 'tmp_sfc1_1', 'tmp_sfc2_1', 'tmp_sfc3_1', 'tmp_sfc4_1', 'tmp_sfc5_1', 'tmax_2m1_1', 'tmax_2m2_1', 'tmax_2m3_1', 'tmax_2m4_1', 'tmax_2m5_1', 'tcolc_e1_1', 'tcolc_e2_1', 'tcolc_e3_1', 'tcolc_e4_1', 'tcolc_e5_1', 'spfh_2m1_1', 'spfh_2m2_1', 'spfh_2m3_1', 'spfh_2m4_1', 'spfh_2m5_1', 'pwat_ea1_1', 'pwat_ea2_1', 'pwat_ea3_1', 'pwat_ea4_1', 'pwat_ea5_1'], axis=1)
 # Imprimimos el dataframe reducido.
 print(df_reducida)
 
@@ -1000,8 +1007,6 @@ print(f'\nRMSE ajustado: {rmse_linear_a_r}')
 mae_linear_a_r = mae(y_train_test_r, y_pred)
 print(f'MAE ajustado: {mae_linear_a_r}')
 
-print("\nREVISAR ERRORES (DESNORMALIZAR) Y ESTRATEGIA PORQUE MUCHO ERROR\n")
-
 
 #------------------------------------------------------------
 '''Evaluación de métodos avanzados sin ajuste de hp.'''
@@ -1051,6 +1056,7 @@ print(f'\nRMSE: {rmse_rf}')
 print('[bold red]' + '-' * 60 +'\nEvaluación de modelos avanzados con ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
 print('\n[bold blue]SVMs\n-----[/bold blue]')
+
 #ajuste de hiperparametros
 svm_model = SVR()
 svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
@@ -1080,6 +1086,7 @@ rmse_svm_a = rmse(y_train_test, svm_preds)
 print(f'\nMAE: {mae_svm_a}')
 print(f'\nRMSE: {rmse_svm_a}')
 
+
 print('\n[bold blue]Random Forests\n---------------[/bold blue]')
 
 #ajuste de hiperparametros
@@ -1103,18 +1110,69 @@ rf_params = {   'n_estimators': [100, 200, 400, 500],
 
 rf_grid = GridSearchCV(rf_model, rf_params, cv=ps, n_jobs=-1, verbose=1)
 start = time.time()
-rf_grid.fit(X_train_n, y_train_n.ravel())
+rf_grid.fit(X_train, y_train.ravel())
 end = time.time()
 time_forest_a = end - start
 print(f'Tiempo de entrenamiento: {time_forest_a:.5f} segundos.')
 print("Mejores hiperparámetros:",rf_grid.best_params_)
-rf_preds = rf_grid.predict(X_train_test_n)
-rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
+rf_preds = rf_grid.predict(X_train_test)
+#rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
 mae_rf_a = mae(y_train_test, rf_preds)
 rmse_rf_a = rmse(y_train_test, rf_preds)
 
 print(f'\nMAE: {mae_rf_a}')
 print(f'\nRMSE: {rmse_rf_a}')
+
+#------------------------------------------------------------
+'''Importancia de variables.'''
+#------------------------------------------------------------
+
+
+print('[bold red]' + '-' * 60 +'\nImportancia de variables.\n' + '-' * 60 + '[/bold red]')
+
+print('\n[bold blue]Random Forests\n---------------[/bold blue]')
+print(f'\nImportancia de variables del modelo Random Forests: {rf_grid.best_estimator_.feature_importances_}')
+
+#PCA 
+random_forest=RandomForestRegressor(n_estimators=500, max_depth=None, bootstrap=True)
+selector = SelectKBest(f_regression)
+
+pipeline = Pipeline([('select', selector), ('random_forest', random_forest)])
+
+param_grid = {'select__k': list(range(1,15))}
+tune_select_rf = GridSearchCV(pipeline,
+                                     param_grid,
+                                     scoring="neg_mean_absolute_error",
+                                     cv=ps
+                                     )
+
+tune_select_rf.fit(X_train, y_train.ravel())
+
+print(tune_select_rf.best_params_, np.sqrt(-tune_select_rf.best_score_))
+
+trained_pipeline = tune_select_rf.best_estimator_
+
+print(f"Features selected: {trained_pipeline.named_steps['select'].get_support()}")
+
+print(f"Locations where features selected: {np.where(trained_pipeline.named_steps['select'].get_support())}")
+
+
+feature_names_before_selection = disp_df.drop('salida', axis=1).columns
+
+print(f"In Scikit-learn 1.x, we can even get the feature names after selection: {trained_pipeline.named_steps['select'].get_feature_names_out(feature_names_before_selection)}")
+
+pprint(list(zip(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])))
+
+plt.plot(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])
+plt.ylabel('SCORE')
+plt.xlabel('Number of features')
+#guardar imagen
+plt.savefig('pca.png')
+
+predictions_test = tune_select_rf.predict(X_train_test)
+mae_rf_a_r = mae(y_train_test, predictions_test)
+
+print(f'\nMAE: {mae_rf_a_r}')
 
 #------------------------------------------------------------
 '''Comparación de modelos avanzado y resultados.'''
