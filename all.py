@@ -30,6 +30,8 @@ from sklearn.dummy import DummyRegressor
 
 # Evaluación de modelos con ajuste de hiperparámetros.
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 
@@ -208,11 +210,13 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=2/12, random
 print('Datos de entrenamiento:', X_train.shape, y_train.shape)   # 3650 días -> 10 años.
 print('Datos de test:', X_test.shape, y_test.shape)              # 720 días  ->  2 años.
 
+'''
 # Convertir dataframe a numpy array.
 X_train = X_train.to_numpy()
 X_test = X_test.to_numpy()
 y_train = y_train.to_numpy()
 y_test = y_test.to_numpy()
+'''
 
 # Normalizamos los datos.
 scaler = MinMaxScaler()
@@ -221,9 +225,9 @@ X_train_n = scaler.transform(X_train)
 X_test_n = scaler.transform(X_test)
 
 scaler = MinMaxScaler()
-scaler.fit(y_train.reshape(-1, 1))
-y_train_n = scaler.transform(y_train.reshape(-1, 1))
-y_test_n = scaler.transform(y_test.reshape(-1, 1))
+scaler.fit(y_train.values.reshape(-1, 1))
+y_train_n = scaler.transform(y_train.values.reshape(-1, 1))
+y_test_n = scaler.transform(y_test.values.reshape(-1, 1))
 
 print()
 
@@ -312,6 +316,10 @@ start = time.time()
 mae_knn_cv = cross_val_score(cv_knn, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
 end = time.time()
 time2_knn_cv = end - start
+
+# Denormalizar los datos.
+rmse_knn_cv = scaler.inverse_transform(rmse_knn_cv.reshape(-1, 1)).ravel()
+mae_knn_cv = scaler.inverse_transform(mae_knn_cv.reshape(-1, 1)).ravel()
 
 print(f'Tiempo de entrenamiento (RMSE): {time1_knn_cv:.5f} segundos.')
 print(f'Tiempo de entrenamiento (MAE): {time2_knn_cv:.5f} segundos.')
@@ -513,19 +521,23 @@ for train, valid in ps.split(X):
 cv_linear = LinearRegression()
 
 start = time.time()
-scores = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
+rmse_linear_cv = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_root_mean_squared_error')
 end = time.time()
 time1_linear_cv = end - start
 
 start = time.time()
-scores = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
+mae_linear_cv = cross_val_score(cv_linear, X_train_n, y_train_n, cv=ps, scoring='neg_mean_absolute_error')
 end = time.time()
 time2_linear_cv = end - start
 
+# Denormalizar los datos.
+rmse_linear_cv = scaler.inverse_transform(rmse_linear_cv.reshape(-1, 1)).ravel()
+mae_linear_cv = scaler.inverse_transform(mae_linear_cv.reshape(-1, 1)).ravel()
+
 print(f'Tiempo de entrenamiento (RMSE): {time1_linear_cv:.5f} segundos.')
 print(f'Tiempo de entrenamiento (MAE): {time2_linear_cv:.5f} segundos.')
-print(f'\nRMSE: {-scores.mean()}')
-print(f'RMSE: {-scores.mean()}')
+print(f'\nRMSE: {-rmse_linear_cv.mean()}')
+print(f'RMSE: {-mae_linear_cv.mean()}')
 
 
 # [Regresión lineal] MODELOS DUMMY.
@@ -601,16 +613,19 @@ param_grid = {
 # Definimos el modelo.
 model = KNeighborsRegressor()
 
+# Definir la estrategia de validación cruzada
+cv = TimeSeriesSplit(n_splits=3)
+
 # Definimos el grid search.
 grid = GridSearchCV(estimator=model,
                     param_grid=param_grid,
-                    cv=ps,
+                    cv=cv,
                     scoring='neg_mean_absolute_error',
                     verbose=1,
                     n_jobs=-1)
 
 # Entrenamos el grid search.
-grid_result = grid.fit(X_train_n, y_train_n)
+grid_result = grid.fit(X_train_train_n, y_train_train_n)
 
 # Mejores hiperparámetros.
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
@@ -620,7 +635,7 @@ best_model = grid_result.best_estimator_
 y_pred_n = best_model.predict(X_train_test_n)
 
 # Denormalizar la predicción del modelo.
-y_pred = scaler.inverse_transform(y_pred_n.reshape(-1, 1)).ravel()
+y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
@@ -651,12 +666,14 @@ param_grid = {
 
 # Definimos el modelo.
 model = DecisionTreeRegressor()
-np.random.seed(13)
+
+# Definir la estrategia de validación cruzada
+cv = TimeSeriesSplit(n_splits=3)
 
 # Definimos el grid search.
 grid = GridSearchCV(estimator=model,
                     param_grid=param_grid,
-                    cv=ps,
+                    cv=cv,
                     scoring='neg_mean_absolute_error',
                     verbose=1,
                     n_jobs=-1)
@@ -699,10 +716,13 @@ param_grid = {
 # Definimos el modelo.
 model = LinearRegression()
 
+# Definir la estrategia de validación cruzada
+cv = TimeSeriesSplit(n_splits=3)
+
 # Definimos el grid search.
 grid = GridSearchCV(estimator=model,
                     param_grid=param_grid,
-                    cv=ps,
+                    cv=cv,
                     scoring='neg_mean_absolute_error',
                     verbose=1,
                     n_jobs=-1)
@@ -1008,6 +1028,7 @@ mae_linear_a_r = mae(y_train_test_r, y_pred)
 print(f'MAE ajustado: {mae_linear_a_r}')
 
 
+"""
 #------------------------------------------------------------
 '''Evaluación de métodos avanzados sin ajuste de hp.'''
 #------------------------------------------------------------
@@ -1196,3 +1217,4 @@ print(f'\nRatio de mejora del error absoluto medio del modelo Random Forests: {m
 #------------------------------------------------------------
 
 print('[bold red]' + '-' * 60 +'\nModelo final.\n' + '-' * 60)
+"""
