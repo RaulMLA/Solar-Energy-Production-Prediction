@@ -240,10 +240,10 @@ print()
 print('[bold red]' + '-' * 60 +'\nEvaluación de modelos simples sin ajuste de hiperparámetros.\n' + '-' * 60 + '[/bold red]')
 
 # Volvemos a dividir los datos en entrenamiento y test porque la parttición test solo la usaremos en la evaluación final.
-X_train_train, X_train_test, y_train_train, y_train_test = train_test_split(X_train, y_train, test_size=3/10, random_state=13, shuffle=False)
+X_train_train, X_train_test, y_train_train, y_train_test = train_test_split(X_train, y_train, test_size=1/10, random_state=13, shuffle=False)
 
 # Dividir también los datos normalizados.
-X_train_train_n, X_train_test_n, y_train_train_n, y_train_test_n = train_test_split(X_train_n, y_train_n, test_size=3/10, random_state=13, shuffle=False)
+X_train_train_n, X_train_test_n, y_train_train_n, y_train_test_n = train_test_split(X_train_n, y_train_n, test_size=1/10, random_state=13, shuffle=False)
 
 # Muestra el tamaño de los datos de entrenamiento y test nuevos.
 print('Datos train_train: ' , X_train_train.shape, y_train_train.shape)   # 2550 días -> 7 años.
@@ -285,8 +285,8 @@ print('\n[yellow]Modelo validación cruzada[/yellow]')
 # Usar predefined split para la validación cruzada.
 
 # Número de días de entrenamiento y test.
-N_train = 7*365
-N_test = 3*365
+N_train = 9*365
+N_test = 1*365
 
 # Crear el selector de validación cruzada.
 selector = [-1] * N_train + [0] * N_test
@@ -600,13 +600,13 @@ print('\n[bold blue]KNN\n----[/bold blue]')
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
-    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8],
-    'n_neighbors': [1, 2, 5, 8, 10, 15, 20, 40],
+    'n_neighbors': [1, 2, 3, 4],
+    #'n_neighbors': [1, 2, 5, 8, 10, 15, 20, 40],
     #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'weights': ['uniform', 'distance'],
     'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
-    'leaf_size': [1, 2, 5, 10, 20, 30, 100],
-    #'leaf_size': list(range(1,50))
+    'leaf_size': [1, 2, 5, 10, 20],
+    #'leaf_size': list(range(1,50)),
     'p':[1, 2]
 }
 
@@ -614,18 +614,18 @@ param_grid = {
 model = KNeighborsRegressor()
 
 # Definir la estrategia de validación cruzada
-cv = TimeSeriesSplit(n_splits=3)
+#cv = TimeSeriesSplit(n_splits=3)
 
 # Definimos el grid search.
 grid = GridSearchCV(estimator=model,
                     param_grid=param_grid,
-                    cv=cv,
+                    cv=ps,
                     scoring='neg_mean_absolute_error',
                     verbose=1,
                     n_jobs=-1)
 
 # Entrenamos el grid search.
-grid_result = grid.fit(X_train_train_n, y_train_train_n)
+grid_result = grid.fit(X_train_n, y_train_n)
 
 # Mejores hiperparámetros.
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
@@ -668,12 +668,12 @@ param_grid = {
 model = DecisionTreeRegressor()
 
 # Definir la estrategia de validación cruzada
-cv = TimeSeriesSplit(n_splits=3)
+#cv = TimeSeriesSplit(n_splits=3)
 
 # Definimos el grid search.
 grid = GridSearchCV(estimator=model,
                     param_grid=param_grid,
-                    cv=cv,
+                    cv=ps,
                     scoring='neg_mean_absolute_error',
                     verbose=1,
                     n_jobs=-1)
@@ -717,12 +717,12 @@ param_grid = {
 model = LinearRegression()
 
 # Definir la estrategia de validación cruzada
-cv = TimeSeriesSplit(n_splits=3)
+#cv = TimeSeriesSplit(n_splits=3)
 
 # Definimos el grid search.
 grid = GridSearchCV(estimator=model,
                     param_grid=param_grid,
-                    cv=cv,
+                    cv=ps,
                     scoring='neg_mean_absolute_error',
                     verbose=1,
                     n_jobs=-1)
