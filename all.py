@@ -219,12 +219,12 @@ y_test = y_test.to_numpy()
 '''
 
 # Normalizamos los datos.
-scaler = MinMaxScaler()
+scaler = StandardScaler()
 scaler.fit(X_train)
 X_train_n = scaler.transform(X_train)
 X_test_n = scaler.transform(X_test)
 
-scaler = MinMaxScaler()
+scaler = StandardScaler()
 scaler.fit(y_train.values.reshape(-1, 1))
 y_train_n = scaler.transform(y_train.values.reshape(-1, 1))
 y_test_n = scaler.transform(y_test.values.reshape(-1, 1))
@@ -240,14 +240,14 @@ print()
 print('[bold red]' + '-' * 60 +'\nEvaluación de modelos simples sin ajuste de hiperparámetros.\n' + '-' * 60 + '[/bold red]')
 
 # Volvemos a dividir los datos en entrenamiento y test porque la parttición test solo la usaremos en la evaluación final.
-X_train_train, X_train_test, y_train_train, y_train_test = train_test_split(X_train, y_train, test_size=1/10, random_state=13, shuffle=False)
+X_train_train, X_train_validation, y_train_train, y_train_validation = train_test_split(X_train, y_train, test_size=1/10, random_state=13, shuffle=False)
 
 # Dividir también los datos normalizados.
-X_train_train_n, X_train_test_n, y_train_train_n, y_train_test_n = train_test_split(X_train_n, y_train_n, test_size=1/10, random_state=13, shuffle=False)
+X_train_train_n, X_train_validation_n, y_train_train_n, y_train_validation_n = train_test_split(X_train_n, y_train_n, test_size=1/10, random_state=13, shuffle=False)
 
 # Muestra el tamaño de los datos de entrenamiento y test nuevos.
 print('Datos train_train: ' , X_train_train.shape, y_train_train.shape)   # 2550 días -> 7 años.
-print('Datos train_test: ' , X_train_test.shape, y_train_test.shape)      # 1100 días  ->  3 años.
+print('Datos train_test: ' , X_train_validation.shape, y_train_validation.shape)      # 1100 días  ->  3 años.
 
 
 # KNN.
@@ -265,17 +265,17 @@ time_knn = end - start
 print(f'Tiempo de entrenamiento: {time_knn:.5f} segundos.')
 
 # Predicciones del conjunto de test.
-y_pred_n = base_knn.predict(X_train_test_n)
+y_pred_n = base_knn.predict(X_train_validation_n)
 
 # Denormalizar los datos (aunque se podría RMSE y MAE sin denormalizar).
 y_pred = scaler.inverse_transform(y_pred_n)
 
 # Cálculo del error cuadrático medio.
-rmse_knn = rmse(y_train_test, y_pred)
+rmse_knn = rmse(y_train_validation, y_pred)
 print(f'\nRMSE: {rmse_knn}')
 
 # Cálculo del error absoluto medio.
-mae_knn = mae(y_train_test, y_pred)
+mae_knn = mae(y_train_validation, y_pred)
 print(f'MAE: {mae_knn}')
 
 
@@ -347,22 +347,22 @@ print(f'Tiempo de entrenamiento (mean): {time_knn_dm1:.5f} segundos.')
 print(f'Tiempo de entrenamiento (median): {time_knn_dm2:.5f} segundos.')
 
 # Predicciones del conjunto de test.
-y_pred_dummy_1_n = dummy_1_knn.predict(X_train_test_n).reshape(-1, 1)
-y_pred_dummy_2_n = dummy_2_knn.predict(X_train_test_n).reshape(-1, 1)
+y_pred_dummy_1_n = dummy_1_knn.predict(X_train_validation_n).reshape(-1, 1)
+y_pred_dummy_2_n = dummy_2_knn.predict(X_train_validation_n).reshape(-1, 1)
 
 # Denormalizar los datos (aunque se podría RMSE y MAE sin denormalizar).
 y_pred_dummy_1 = scaler.inverse_transform(y_pred_dummy_1_n)
 y_pred_dummy_2 = scaler.inverse_transform(y_pred_dummy_2_n)
 
 # Cálculo del error cuadrático medio.
-rmse_knn_dm1 = rmse(y_train_test, y_pred_dummy_1)
-rmse_knn_dm2 = rmse(y_train_test, y_pred_dummy_2)
+rmse_knn_dm1 = rmse(y_train_validation, y_pred_dummy_1)
+rmse_knn_dm2 = rmse(y_train_validation, y_pred_dummy_2)
 print(f'\nRMSE (mean): {rmse_knn_dm1}')
 print(f'RMSE (median): {rmse_knn_dm2}')
 
 # Cálculo del error absoluto medio.
-mae_knn_dm1 = mae(y_train_test, y_pred_dummy_1)
-mae_knn_dm2 = mae(y_train_test, y_pred_dummy_2)
+mae_knn_dm1 = mae(y_train_validation, y_pred_dummy_1)
+mae_knn_dm2 = mae(y_train_validation, y_pred_dummy_2)
 print(f'MAE (mean): {mae_knn_dm1}')
 print(f'MAE (median): {mae_knn_dm2}')
 
@@ -388,14 +388,14 @@ time_tree = end - start
 print(f'Tiempo de entrenamiento: {time_tree:.5f} segundos.')
 
 # Predicciones del conjunto de test.
-y_pred = base_tree.predict(X_train_test)
+y_pred = base_tree.predict(X_train_validation)
 
 # Cálculo del error cuadrático medio.
-rmse_tree = rmse(y_train_test, y_pred)
+rmse_tree = rmse(y_train_validation, y_pred)
 print(f'\nError cuadrático medio del modelo Árbol de decisión: {rmse_tree}')
 
 # Cálculo del error absoluto medio.
-mae_tree = mae(y_train_test, y_pred)
+mae_tree = mae(y_train_validation, y_pred)
 print(f'Error absoluto medio del modelo Árbol de decisión: {mae_tree}')
 
 
@@ -454,18 +454,18 @@ print(f'Tiempo de entrenamiento (mean): {time_tree_dm1:.5f} segundos.')
 print(f'Tiempo de entrenamiento (median): {time_tree_dm2:.5f} segundos.')
 
 # Predicciones del conjunto de test.
-y_pred_dummy_1 = dummy_1_tree.predict(X_train_test)
-y_pred_dummy_2 = dummy_2_tree.predict(X_train_test)
+y_pred_dummy_1 = dummy_1_tree.predict(X_train_validation)
+y_pred_dummy_2 = dummy_2_tree.predict(X_train_validation)
 
 # Cálculo del error cuadrático medio.
-rmse_tree_dm1 = rmse(y_train_test, y_pred_dummy_1)
-rmse_tree_dm2 = rmse(y_train_test, y_pred_dummy_2)  
+rmse_tree_dm1 = rmse(y_train_validation, y_pred_dummy_1)
+rmse_tree_dm2 = rmse(y_train_validation, y_pred_dummy_2)  
 print(f'\nRMSE (mean): {rmse_tree_dm1}')
 print(f'RMSE (median): {rmse_tree_dm2}')
 
 # Cálculo del error absoluto medio.
-mae_tree_dm1 = mae(y_train_test, y_pred_dummy_1)
-mae_tree_dm2 = mae(y_train_test, y_pred_dummy_2)
+mae_tree_dm1 = mae(y_train_validation, y_pred_dummy_1)
+mae_tree_dm2 = mae(y_train_validation, y_pred_dummy_2)
 print(f'MAE (mean): {mae_tree_dm1}')
 print(f'MAE (median): {mae_tree_dm2}')
 
@@ -491,17 +491,17 @@ time_linear = end - start
 print(f'Tiempo de entrenamiento: {time_linear:.5f} segundos.')
 
 # Predicciones del conjunto de test.
-y_pred_n = base_linear.predict(X_train_test_n)
+y_pred_n = base_linear.predict(X_train_validation_n)
 
 # Denormalizar los datos.
 y_pred = scaler.inverse_transform(y_pred_n)
 
 # Cálculo del error cuadrático medio.
-rmse_linear = rmse(y_train_test, y_pred)
+rmse_linear = rmse(y_train_validation, y_pred)
 print(f'\nRMSE: {rmse_linear}')
 
 # Cálculo del error absoluto medio.
-mae_linear = mae(y_train_test, y_pred)
+mae_linear = mae(y_train_validation, y_pred)
 print(f'MAE: {mae_linear}')
 
 # [Regresión lineal] MODELO VALIDACIÓN CRUZADA.
@@ -560,22 +560,22 @@ print(f'Tiempo de entrenamiento (mean): {time_linear_dm1:.5f} segundos.')
 print(f'Tiempo de entrenamiento (median): {time_linear_dm2:.5f} segundos.')
 
 # Predicciones del conjunto de test.
-y_pred_dummy_1_n = dummy_1_linear.predict(X_train_test_n).reshape(-1, 1)
-y_pred_dummy_2_n = dummy_2_linear.predict(X_train_test_n).reshape(-1, 1)
+y_pred_dummy_1_n = dummy_1_linear.predict(X_train_validation_n).reshape(-1, 1)
+y_pred_dummy_2_n = dummy_2_linear.predict(X_train_validation_n).reshape(-1, 1)
 
 # Denormalizar los datos.
 y_pred_dummy_1 = scaler.inverse_transform(y_pred_dummy_1_n)
 y_pred_dummy_2 = scaler.inverse_transform(y_pred_dummy_2_n)
 
 # Cálculo del error cuadrático medio.
-rmse_linear_dm1 = rmse(y_train_test, y_pred_dummy_1)
-rmse_linear_dm2 = rmse(y_train_test, y_pred_dummy_2)
+rmse_linear_dm1 = rmse(y_train_validation, y_pred_dummy_1)
+rmse_linear_dm2 = rmse(y_train_validation, y_pred_dummy_2)
 print(f'\nRMSE (mean): {rmse_linear_dm1}')
 print(f'RMSE (median): {rmse_linear_dm2}')
 
 # Cálculo del error absoluto medio.
-mae_linear_dm1 = mae(y_train_test, y_pred_dummy_1)
-mae_linear_dm2 = mae(y_train_test, y_pred_dummy_2)
+mae_linear_dm1 = mae(y_train_validation, y_pred_dummy_1)
+mae_linear_dm2 = mae(y_train_validation, y_pred_dummy_2)
 print(f'MAE (mean): {mae_linear_dm1}')
 print(f'MAE (median): {mae_linear_dm2}')
 
@@ -591,6 +591,25 @@ print(f'MAE dummy (median)/MAE linear: {mae_linear_dm2/mae_linear}')
 '''Evaluación de modelos simples con ajuste de hp.'''
 #------------------------------------------------------------
 
+'''
+La principal diferencia entre Grid Search y Randomized Search es la forma en que exploran el espacio de
+hiperparámetros. Grid Search explora todas las combinaciones posibles de los valores especificados para
+cada hiperparámetro. Es decir, crea una malla (o grid) de valores posibles para cada hiperparámetro y
+prueba todas las combinaciones. Es una estrategia exhaustiva que garantiza que se probarán todas las
+combinaciones posibles, pero puede ser extremadamente costosa computacionalmente, especialmente cuando
+el número de hiperparámetros es grande.
+
+Por otro lado, Randomized Search es un enfoque más eficiente que selecciona aleatoriamente combinaciones
+de hiperparámetros para probar en lugar de probar todas las combinaciones posibles. Esto hace que Randomized
+Search sea más rápido y escalable para espacios de hiperparámetros grandes. Sin embargo, no garantiza que
+se prueben todas las combinaciones posibles, lo que puede resultar en que se omitan combinaciones importantes.
+
+En general, se recomienda utilizar Randomized Search cuando el espacio de hiperparámetros es grande y
+se dispone de recursos limitados para la búsqueda, mientras que Grid Search es preferible cuando el
+espacio de hiperparámetros es pequeño y se dispone de suficientes recursos computacionales para realizar
+una búsqueda exhaustiva.
+'''
+
 print('\n' + '[bold red]' + '-' * 60 +'\nEvaluación de modelos simples con ajuste de hp.\n' + '-' * 60 + '[/bold red]')
 
 # KNN.
@@ -600,7 +619,7 @@ print('\n[bold blue]KNN\n----[/bold blue]')
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
-    'n_neighbors': [1, 2, 3, 4],
+    'n_neighbors': [1, 2, 3, 4, 5, 6],
     #'n_neighbors': [1, 2, 5, 8, 10, 15, 20, 40],
     #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'weights': ['uniform', 'distance'],
@@ -625,26 +644,66 @@ grid = GridSearchCV(estimator=model,
                     n_jobs=-1)
 
 # Entrenamos el grid search.
+start = time.time()
 grid_result = grid.fit(X_train_n, y_train_n)
+end = time.time()
+t_knn_gs = end - start
+print(f'Tiempo de entrenamiento (Grid Search): {t_knn_gs:.5f} segundos.')
 
 # Mejores hiperparámetros.
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred_n = best_model.predict(X_train_test_n)
+y_pred_n = best_model.predict(X_train_validation_n)
 
 # Denormalizar la predicción del modelo.
 y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
-# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
-rmse_knn_a = rmse(y_train_test, y_pred)
+rmse_knn_a = rmse(y_train_validation, y_pred)
 print(f'\nRMSE: {rmse_knn_a}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_knn_a = mae(y_train_test, y_pred)
+mae_knn_a = mae(y_train_validation, y_pred)
 print(f'MAE: {mae_knn_a}')
+
+
+# Ahora, usaremos random search para comparar resultados con grid search.
+r_search = RandomizedSearchCV(estimator=model,
+                              param_distributions=param_grid,
+                              cv=ps,
+                              scoring='neg_mean_absolute_error',
+                              verbose=1,
+                              n_jobs=-1,
+                              n_iter=10)
+
+
+# Entrenamos el random search.
+start = time.time()
+r_search_result = r_search.fit(X_train_n, y_train_n)
+end = time.time()
+t_knn_rs = end - start
+print(f'\nTiempo de entrenamiento (Randomized Search): {t_knn_rs:.5f} segundos.')
+
+# Mejores hiperparámetros.
+print(f'\nMejores hiperparámetros: {r_search_result.best_params_}')
+
+# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
+best_model = r_search_result.best_estimator_
+y_pred_n = best_model.predict(X_train_validation_n)
+
+# Denormalizar la predicción del modelo.
+y_pred = scaler.inverse_transform(y_pred_n)
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_knn_b = rmse(y_train_validation, y_pred)
+print(f'\nRMSE: {rmse_knn_b}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_knn_b = mae(y_train_validation, y_pred)
+print(f'MAE: {mae_knn_b}')
+
 
 # Mejor score.
 #mae_knn_a = -grid_result.best_score_
@@ -659,7 +718,7 @@ print('\n[bold blue]Árbol de decisión\n------------------[/bold blue]')
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
     'max_depth': [1, 2, 5, 8, 10, 15, 20, 40],
-    #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+     #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
     'min_samples_leaf': [1, 2, 5, 8, 10, 15, 20, 40],
 }
@@ -679,23 +738,59 @@ grid = GridSearchCV(estimator=model,
                     n_jobs=-1)
 
 # Entrenamos el grid search.
+start = time.time()
 grid_result = grid.fit(X_train, y_train)
+end = time.time()
+t_tree_gs = end - start
+print(f'Tiempo de entrenamiento (Grid Search): {t_tree_gs:.5f} segundos.')
 
 # Mejores hiperparámetros.
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred = best_model.predict(X_train_test)
+y_pred = best_model.predict(X_train_validation)
 
 # Calcular el error cuadrático medio en la escala original.
-# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
-rmse_tree_a = rmse(y_train_test, y_pred)
+rmse_tree_a = rmse(y_train_validation, y_pred)
 print(f'\nRMSE: {rmse_tree_a}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_tree_a = mae(y_train_test, y_pred)
+mae_tree_a = mae(y_train_validation, y_pred)
 print(f'MAE: {mae_tree_a}')
+
+
+# Ahora, usaremos random search para comparar resultados con grid search.
+r_search = RandomizedSearchCV(estimator=model,
+                              param_distributions=param_grid,
+                              cv=ps,
+                              scoring='neg_mean_absolute_error',
+                              verbose=1,
+                              n_jobs=-1,
+                              n_iter=10)
+
+# Entrenamos el grid search.
+start = time.time()
+r_search_result = r_search.fit(X_train, y_train)
+end = time.time()
+t_tree_rs = end - start
+print(f'\nTiempo de entrenamiento (Randomized Search): {t_tree_rs:.5f} segundos.')
+
+# Mejores hiperparámetros.
+print(f'\nMejores hiperparámetros: {r_search_result.best_params_}')
+
+# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
+best_model = r_search_result.best_estimator_
+y_pred = best_model.predict(X_train_validation)
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_tree_b = rmse(y_train_validation, y_pred)
+print(f'\nRMSE: {rmse_tree_b}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_tree_b = mae(y_train_validation, y_pred)
+print(f'MAE: {mae_tree_b}')
+
 
 # Mejor score.
 #mae_tree_a = -grid_result.best_score_
@@ -728,26 +823,64 @@ grid = GridSearchCV(estimator=model,
                     n_jobs=-1)
 
 # Entrenamos el grid search.
+start = time.time()
 grid_result = grid.fit(X_train_n, y_train_n)
+end = time.time()
+t_linear_gs = end - start
+print(f'Tiempo de entrenamiento (Grid Search): {t_linear_gs:.5f} segundos.')
 
 # Mejores hiperparámetros.
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred_n = best_model.predict(X_train_test_n)
+y_pred_n = best_model.predict(X_train_validation_n)
 
 # Desnormalizar la predicción del modelo.
 y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
-# Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta].
-rmse_linear_a = rmse(y_train_test, y_pred)
+rmse_linear_a = rmse(y_train_validation, y_pred)
 print(f'\nRMSE: {rmse_linear_a}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_linear_a = mae(y_train_test, y_pred)
+mae_linear_a = mae(y_train_validation, y_pred)
 print(f'MAE: {mae_linear_a}')
+
+# Ahora, usaremos random search para comparar resultados con grid search.
+r_search = RandomizedSearchCV(estimator=model,
+                              param_distributions=param_grid,
+                              cv=ps,
+                              scoring='neg_mean_absolute_error',
+                              verbose=1,
+                              n_jobs=-1,
+                              n_iter=4)
+
+# Entrenamos el grid search.
+start = time.time()
+r_search_result = r_search.fit(X_train_n, y_train_n)
+end = time.time()
+t_linear_rs = end - start
+print(f'\nTiempo de entrenamiento (Randomized Search): {t_linear_rs:.5f} segundos.')
+
+# Mejores hiperparámetros.
+print(f'\nMejores hiperparámetros: {r_search_result.best_params_}')
+
+# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
+best_model = r_search_result.best_estimator_
+y_pred_n = best_model.predict(X_train_validation_n)
+
+# Desnormalizar la predicción del modelo.
+y_pred = scaler.inverse_transform(y_pred_n)
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_linear_b = rmse(y_train_validation, y_pred)
+print(f'\nRMSE: {rmse_linear_b}')
+
+# Calcular el error absoluto medio en la escala original.
+mae_linear_b = mae(y_train_validation, y_pred)
+print(f'MAE: {mae_linear_b}')
+
 
 # Mejor score.
 #mae_linear_a = -grid_result.best_score_
@@ -769,7 +902,7 @@ print('\n[bold green]KNN\n----[/bold green]')
 print('MAE sin ajustar:', mae_knn)
 print('MAE ajustado:', mae_knn_a)
 print('MAE ratio KNN/knn_adjusted:', mae_knn/mae_knn_a)
-print(f'MAE dummy (mean)/MAE KNN: {mae_knn_dm1/mae_knn_a}')
+print(f'\nMAE dummy (mean)/MAE KNN: {mae_knn_dm1/mae_knn_a}')
 print(f'MAE dummy (median)/MAE KNN: {mae_knn_dm2/mae_knn_a}')
 
 print('\nRMSE sin ajustar:', rmse_knn)
@@ -785,7 +918,7 @@ print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
 print('MAE sin ajustar:', mae_tree)
 print('MAE ajustado:', mae_tree_a)
 print('MAE ratio tree/tree_adjusted:', mae_tree/mae_tree_a)
-print(f'MAE dummy (mean)/MAE tree: {mae_tree_dm1/mae_tree_a}')
+print(f'\nMAE dummy (mean)/MAE tree: {mae_tree_dm1/mae_tree_a}')
 print(f'MAE dummy (median)/MAE tree: {mae_tree_dm2/mae_tree_a}')
 
 print('\nRMSE sin ajustar:', rmse_tree)
@@ -835,14 +968,14 @@ print(df_reducida.shape)
 X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(df_reducida.drop('salida', axis=1), df_reducida['salida'], test_size=2/12, random_state=13, shuffle=False)
 
 # Volvemos a dividir el train en train_train y train_test.
-X_train_train_r, X_train_test_r, y_train_train_r, y_train_test_r = train_test_split(X_train_r, y_train_r, test_size=3/10, random_state=13, shuffle=False)
+X_train_train_r, X_train_validation_r, y_train_train_r, y_train_validation_r = train_test_split(X_train_r, y_train_r, test_size=1/10, random_state=13, shuffle=False)
 
 # Normalizamos los datos.
 scaler_r = MinMaxScaler()
 scaler_r.fit(X_train_train_r)
 X_train_r_n = scaler_r.transform(X_train_r)
 X_train_train_r_n = scaler_r.transform(X_train_train_r)
-X_train_test_r_n = scaler_r.transform(X_train_test_r)
+X_train_validation_r_n = scaler_r.transform(X_train_validation_r)
 X_test_r_n = scaler_r.transform(X_test_r)
 
 # Normalizamos la salida.
@@ -850,7 +983,7 @@ scaler_r = MinMaxScaler()
 scaler_r.fit(y_train_train_r.values.reshape(-1, 1))
 y_train_r_n = scaler_r.transform(y_train_r.values.reshape(-1, 1))
 y_train_train_r_n = scaler_r.transform(y_train_train_r.values.reshape(-1, 1))
-y_train_test_r_n = scaler_r.transform(y_train_test_r.values.reshape(-1, 1))
+y_train_validation_r_n = scaler_r.transform(y_train_validation_r.values.reshape(-1, 1))
 y_test_r_n = scaler_r.transform(y_test_r.values.reshape(-1, 1))
 
 # Entrenamos a los modelos Knn, Árbol de decisión y Regresión lineal con el dataframe reducido y con los mejores hiperparametros.
@@ -863,10 +996,10 @@ knn_model_r.fit(X_train_train_r_n, y_train_train_r_n)
 end = time.time()
 time_knn_r = end - start
 print(f'Tiempo de entrenamiento: {time_knn_r:.5f} segundos.')
-knn_preds_r_n = knn_model_r.predict(X_train_test_r_n)
+knn_preds_r_n = knn_model_r.predict(X_train_validation_r_n)
 knn_preds_r = scaler_r.inverse_transform(knn_preds_r_n)
-mae_knn_r = mae(y_train_test_r, knn_preds_r)
-rmse_knn_r = rmse(y_train_test_r, knn_preds_r)
+mae_knn_r = mae(y_train_validation_r, knn_preds_r)
+rmse_knn_r = rmse(y_train_validation_r, knn_preds_r)
 
 print(f'\nRMSE: {rmse_knn_r}')
 print(f'MAE: {mae_knn_r}')
@@ -904,18 +1037,18 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
 best_model = grid_result.best_estimator_
-y_pred_n = best_model.predict(X_train_test_r_n)
+y_pred_n = best_model.predict(X_train_validation_r_n)
 
 # Denormalizar la predicción del modelo.
 y_pred = scaler_r.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
-rmse_knn_a_r = rmse(y_train_test_r, y_pred)
+rmse_knn_a_r = rmse(y_train_validation_r, y_pred)
 print(f'\nRMSE ajustado: {rmse_knn_a_r}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_knn_a_r = mae(y_train_test_r, y_pred)
+mae_knn_a_r = mae(y_train_validation_r, y_pred)
 print(f'MAE ajustado: {mae_knn_a_r}')
 
 # Arbol de decisión.
@@ -926,21 +1059,22 @@ tree_model_r.fit(X_train_train_r, y_train_train_r)
 end = time.time()
 time_tree_r = end - start
 print(f'Tiempo de entrenamiento: {time_tree_r:.5f} segundos.')
-tree_preds_r = tree_model_r.predict(X_train_test_r)
-mae_tree_r = mae(y_train_test_r, tree_preds_r)
-rmse_tree_r = rmse(y_train_test_r, tree_preds_r)
+tree_preds_r = tree_model_r.predict(X_train_validation_r)
+mae_tree_r = mae(y_train_validation_r, tree_preds_r)
+rmse_tree_r = rmse(y_train_validation_r, tree_preds_r)
 
 print(f'\nRMSE: {rmse_tree_r}')
 print(f'MAE: {mae_tree_r}')
 
 #ajuste de hiperparametros
 print('\n[bold green]Ajuste de hiperparámetros Árbol de decisión\n---------------------------[/bold green]')
+
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
     'max_depth': [1, 2, 5, 8, 10, 15, 20, 40],
-    #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
-    'min_samples_split': [1, 2, 3, 5, 7, 8, 9, 10],
-    'min_samples_leaf': [1, 2, 5, 8, 10, 15, 20, 40, 50, 70, 100],
+     #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+    'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'min_samples_leaf': [1, 2, 5, 8, 10, 15, 20, 40],
 }
 
 # Definimos el modelo.
@@ -962,15 +1096,15 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba.
 best_model = grid_result.best_estimator_
-y_pred = best_model.predict(X_train_test_r)
+y_pred = best_model.predict(X_train_validation_r)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
-rmse_tree_a_r = rmse(y_train_test_r, y_pred)
+rmse_tree_a_r = rmse(y_train_validation_r, y_pred)
 print(f'\nRMSE ajustado: {rmse_tree_a_r}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_tree_a_r = mae(y_train_test_r, y_pred)
+mae_tree_a_r = mae(y_train_validation_r, y_pred)
 print(f'MAE ajustado: {mae_tree_a_r}')
 
 # Regresión lineal.
@@ -981,10 +1115,10 @@ linear_model_r.fit(X_train_train_r_n, y_train_train_r_n)
 end = time.time()
 time_linear_r = end - start
 print(f'Tiempo de entrenamiento: {time_linear_r:.5f} segundos.')
-linear_preds_r_n = linear_model_r.predict(X_train_test_r_n)
+linear_preds_r_n = linear_model_r.predict(X_train_validation_r_n)
 linear_preds_r = scaler_r.inverse_transform(linear_preds_r_n)
-mae_linear_r = mae(y_train_test_r, linear_preds_r)
-rmse_linear_r = rmse(y_train_test_r, linear_preds_r)
+mae_linear_r = mae(y_train_validation_r, linear_preds_r)
+rmse_linear_r = rmse(y_train_validation_r, linear_preds_r)
 
 print(f'\nRMSE: {rmse_linear_r}')
 print(f'MAE: {mae_linear_r}')
@@ -1016,15 +1150,15 @@ print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba.
 best_model = grid_result.best_estimator_
-y_pred = best_model.predict(X_train_test_r_n)
+y_pred = best_model.predict(X_train_validation_r_n)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
-rmse_linear_a_r = rmse(y_train_test_r, y_pred)
+rmse_linear_a_r = rmse(y_train_validation_r, y_pred)
 print(f'\nRMSE ajustado: {rmse_linear_a_r}')
 
 # Calcular el error absoluto medio en la escala original.
-mae_linear_a_r = mae(y_train_test_r, y_pred)
+mae_linear_a_r = mae(y_train_validation_r, y_pred)
 print(f'MAE ajustado: {mae_linear_a_r}')
 
 
@@ -1044,10 +1178,10 @@ svm_model.fit(X_train_train_n, y_train_train_n.ravel())
 end = time.time()
 time_svm = end - start
 print(f'Tiempo de entrenamiento: {time_svm:.5f} segundos.')
-svm_preds = svm_model.predict(X_train_test_n)
+svm_preds = svm_model.predict(X_train_validation_n)
 svm_preds = scaler.inverse_transform(svm_preds.reshape(-1,1))
-mae_svm = mae(y_train_test, svm_preds)
-rmse_svm = rmse(y_train_test, svm_preds)
+mae_svm = mae(y_train_validation, svm_preds)
+rmse_svm = rmse(y_train_validation, svm_preds)
 
 print(f'\nMAE: {mae_svm}')
 print(f'\nRMSE: {rmse_svm}')
@@ -1062,10 +1196,10 @@ rf_model.fit(X_train_train_n, y_train_train_n.ravel())
 end = time.time()
 time_forest= end - start
 print(f'Tiempo de entrenamiento: {time_forest:.5f} segundos.')
-rf_preds = rf_model.predict(X_train_test_n)
+rf_preds = rf_model.predict(X_train_validation_n)
 rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
-mae_rf = mae(y_train_test, rf_preds)
-rmse_rf = rmse(y_train_test, rf_preds)
+mae_rf = mae(y_train_validation, rf_preds)
+rmse_rf = rmse(y_train_validation, rf_preds)
 
 print(f'\nMAE: {mae_rf}')
 print(f'\nRMSE: {rmse_rf}')
@@ -1099,10 +1233,10 @@ end = time.time()
 time_svm_a = end - start
 print(f'Tiempo de entrenamiento: {time_svm_a:.5f} segundos.')
 print("Mejores hiperparámetros:",svm_grid.best_params_)
-svm_preds = svm_grid.predict(X_train_test_n)
+svm_preds = svm_grid.predict(X_train_validation_n)
 svm_preds = scaler.inverse_transform(svm_preds.reshape(-1,1))
-mae_svm_a = mae(y_train_test, svm_preds)
-rmse_svm_a = rmse(y_train_test, svm_preds)
+mae_svm_a = mae(y_train_validation, svm_preds)
+rmse_svm_a = rmse(y_train_validation, svm_preds)
 
 print(f'\nMAE: {mae_svm_a}')
 print(f'\nRMSE: {rmse_svm_a}')
@@ -1136,10 +1270,10 @@ end = time.time()
 time_forest_a = end - start
 print(f'Tiempo de entrenamiento: {time_forest_a:.5f} segundos.')
 print("Mejores hiperparámetros:",rf_grid.best_params_)
-rf_preds = rf_grid.predict(X_train_test)
+rf_preds = rf_grid.predict(X_train_validation)
 #rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
-mae_rf_a = mae(y_train_test, rf_preds)
-rmse_rf_a = rmse(y_train_test, rf_preds)
+mae_rf_a = mae(y_train_validation, rf_preds)
+rmse_rf_a = rmse(y_train_validation, rf_preds)
 
 print(f'\nMAE: {mae_rf_a}')
 print(f'\nRMSE: {rmse_rf_a}')
@@ -1190,8 +1324,8 @@ plt.xlabel('Number of features')
 #guardar imagen
 plt.savefig('pca.png')
 
-predictions_test = tune_select_rf.predict(X_train_test)
-mae_rf_a_r = mae(y_train_test, predictions_test)
+predictions_test = tune_select_rf.predict(X_train_validation)
+mae_rf_a_r = mae(y_train_validation, predictions_test)
 
 print(f'\nMAE: {mae_rf_a_r}')
 
