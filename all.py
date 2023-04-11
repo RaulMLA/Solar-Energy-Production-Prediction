@@ -1409,8 +1409,11 @@ print('[bold red]' + '-' * 60 +'\nEvaluación de modelos avanzados con ajuste de
 
 print('\n[bold blue]SVMs\n-----[/bold blue]')
 
+print('[yellow]\nGrid Search[/yellow]\n')
+
 #ajuste de hiperparametros
 svm_model = SVR()
+
 svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                 'C': [0.1, 0.5, 1, 2],
                 'gamma': ['scale', 'auto'],
@@ -1423,20 +1426,120 @@ svm_params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
                 #'max_iter': [-1, 1000, 2000, 5000, 10000]
                 }
 
-svm_grid = GridSearchCV(svm_model, svm_params, cv=ps, n_jobs=-1, verbose=1)
+svm_grid = GridSearchCV(estimator=svm_model,
+                        param_grid=svm_params,
+                        cv=ps,
+                        scoring='neg_mean_squared_error',
+                        n_jobs=-1,
+                        verbose=1)
+
+# Entrenamos el grid search
 start = time.time()
 svm_grid.fit(X_train_n, y_train_n.ravel())
 end = time.time()
 time_svm_a = end - start
-print(f'Tiempo de entrenamiento: {time_svm_a:.5f} segundos.')
+
+print(f'\nTiempo búsqueda hiperparámetros (Grid Search): {time_svm_a:.5f} segundos.')
+
+# Mejores hiperparámetros
 print("Mejores hiperparámetros:",svm_grid.best_params_)
-svm_preds = svm_grid.predict(X_train_validation_n)
+
+# Definir modelo SVR con los mejores hiperparámetros
+model = SVR(**svm_grid.best_params_)
+
+# Entrenar modelo con los mejores hiperparámetros
+start = time.time()
+model.fit(X_train_train_n, y_train_train_n.ravel())
+end = time.time()
+time_svm_a = end - start
+print(f'\nTiempo de entrenamiento: {time_svm_a:.5f} segundos.')
+
+# Hacer predicciones con los datos de validación
+svm_preds = model.predict(X_train_validation_n)
+
+# Desnormalizar las predicciones
 svm_preds = scaler.inverse_transform(svm_preds.reshape(-1,1))
-mae_svm_a = mae(y_train_validation, svm_preds)
-rmse_svm_a = rmse(y_train_validation, svm_preds)
+
+# Calcular el error cuadrático medio en la escala original.
+mae_svm_gs_a = mae(y_train_validation, svm_preds)
+print(f'\nMAE: {mae_svm_gs_a}')
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_svm_gs_a = rmse(y_train_validation, svm_preds)
+print(f'\nRMSE: {rmse_svm_gs_a}')
+
+# Ahora, usaremos random search para comparar resultados con grid search.
+print('[yellow]\nRandomized Search[/yellow]\n')
+
+# -Usaremos el mismo diccionario de hiperparámetros que en grid search.
+
+param_grid = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+                'C': [0.1, 0.5, 1, 2],
+                'gamma': ['scale', 'auto'],
+                'degree': [1, 2, 3],
+                'coef0': [0.1, 0.5, 1],
+                'epsilon': [0.1, 0.5, 1, 5],
+                'shrinking': [True, False],
+                'tol': [0.001, 0.0001, 0.00001],
+                'cache_size': [200, 500, 1000],
+                'max_iter': [-1, 1000, 2000, 5000, 10000]
+                }
+
+
+svm_random = RandomizedSearchCV(estimator=svm_model,
+                                param_distributions=svm_params, 
+                                cv=ps,
+                                scoring='neg_mean_squared_error', 
+                                n_jobs=-1, 
+                                verbose=1, 
+                                n_iter=100)
+
+# Entrenamos el random search
+start = time.time()
+svm_random.fit(X_train_n, y_train_n.ravel())
+end = time.time()
+time_svm_a = end - start
+print(f'\nTiempo búsqueda hiperparámetros (Randomized Search): {time_svm_a:.5f} segundos.')
+
+# Mejores hiperparámetros
+print("Mejores hiperparámetros:",svm_random.best_params_)
+
+# Definir modelo SVR con los mejores hiperparámetros
+model = SVR(**svm_random.best_params_)
+
+# Entrenar modelo con los mejores hiperparámetros
+start = time.time()
+model.fit(X_train_train_n, y_train_train_n.ravel())
+end = time.time()
+time_svm_a = end - start
+print(f'\nTiempo de entrenamiento: {time_svm_a:.5f} segundos.')
+
+# Hacer predicciones con los datos de validación
+svm_preds = model.predict(X_train_validation_n)
+
+# Desnormalizar las predicciones
+svm_preds = scaler.inverse_transform(svm_preds.reshape(-1,1))
+
+# Calcular el error cuadrático medio en la escala original.
+mae_svm_rs_a = mae(y_train_validation, svm_preds)
+print(f'\nMAE: {mae_svm_rs_a}')
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_svm_rs_a = rmse(y_train_validation, svm_preds)
+print(f'\nRMSE: {rmse_svm_rs_a}')
+
+# Seleccionamos los menore errores (entre grid search y randomized search).
+mae_svm_a = min(mae_svm_gs_a, mae_svm_rs_a)
+
+if mae_svm_a == mae_svm_gs_a:
+    rmse_svm_a = rmse_svm_gs_a
+else:
+    rmse_svm_a = rmse_svm_rs_a
 
 print(f'\nMAE: {mae_svm_a}')
 print(f'\nRMSE: {rmse_svm_a}')
+
+
 
 
 print('\n[bold blue]Random Forests\n---------------[/bold blue]')
