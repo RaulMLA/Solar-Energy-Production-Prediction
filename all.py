@@ -1045,7 +1045,7 @@ print(f'RMSE dummy (median)/RMSE linear: {rmse_linear_dm2/rmse_linear_a}\n')
                          LOS HIPER PARÁMETROS AJUSTADOS DE FORMA CORRECTA
 '''
 
-"""
+
 #------------------------------------------------------------
 '''Reducción de dimensionalidad.'''
 #------------------------------------------------------------
@@ -1053,11 +1053,16 @@ print(f'RMSE dummy (median)/RMSE linear: {rmse_linear_dm2/rmse_linear_a}\n')
 print('[bold red]' + '-' * 60 +'\nReducción de dimensionalidad.\n' + '-' * 60 + '[/bold red]')
 
 # Quitamos del dataframe de las medias de las variables que no queremos usar.
-#df_reducida = mean_df.drop(['apcp_sf_media', 'pres_msl_media', 'tcdc_eatm_media', 'tcolc_eatm_media'], axis=1)
-#df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media', 'spfh_2m_media', 'pwat_eatm_media'], axis=1)
-df_reducida=mean_df
 
-#df_reducida=disp_df.drop(['tmin_2m1_1', 'tmin_2m2_1', 'tmin_2m3_1', 'tmin_2m4_1', 'tmin_2m5_1', 'tmp_2m_1_1', 'tmp_2m_2_1', 'tmp_2m_3_1', 'tmp_2m_4_1', 'tmp_2m_5_1', 'tmp_sfc1_1', 'tmp_sfc2_1', 'tmp_sfc3_1', 'tmp_sfc4_1', 'tmp_sfc5_1', 'tmax_2m1_1', 'tmax_2m2_1', 'tmax_2m3_1', 'tmax_2m4_1', 'tmax_2m5_1', 'tcolc_e1_1', 'tcolc_e2_1', 'tcolc_e3_1', 'tcolc_e4_1', 'tcolc_e5_1', 'spfh_2m1_1', 'spfh_2m2_1', 'spfh_2m3_1', 'spfh_2m4_1', 'spfh_2m5_1', 'pwat_ea1_1', 'pwat_ea2_1', 'pwat_ea3_1', 'pwat_ea4_1', 'pwat_ea5_1'], axis=1)
+'''Alternativa 1'''
+#df_reducida = mean_df.drop(['apcp_sf_media', 'pres_msl_media', 'tcdc_eatm_media', 'tcolc_eatm_media'], axis=1)
+'''Alternativa 2'''
+#df_reducida = mean_df.drop(['tmin_2m_media', 'tmp_2m_media', 'tmp_sfc_media', 'tmax_2m_media', 'tcolc_eatm_media', 'spfh_2m_media', 'pwat_eatm_media'], axis=1)
+'''Alternativa 3'''
+#df_reducida=mean_df
+'''Alternativa 4'''
+df_reducida=disp_df.drop(['tmin_2m1_1', 'tmin_2m2_1', 'tmin_2m3_1', 'tmin_2m4_1', 'tmin_2m5_1', 'tmp_2m_1_1', 'tmp_2m_2_1', 'tmp_2m_3_1', 'tmp_2m_4_1', 'tmp_2m_5_1', 'tmp_sfc1_1', 'tmp_sfc2_1', 'tmp_sfc3_1', 'tmp_sfc4_1', 'tmp_sfc5_1', 'tmax_2m1_1', 'tmax_2m2_1', 'tmax_2m3_1', 'tmax_2m4_1', 'tmax_2m5_1', 'tcolc_e1_1', 'tcolc_e2_1', 'tcolc_e3_1', 'tcolc_e4_1', 'tcolc_e5_1', 'spfh_2m1_1', 'spfh_2m2_1', 'spfh_2m3_1', 'spfh_2m4_1', 'spfh_2m5_1', 'pwat_ea1_1', 'pwat_ea2_1', 'pwat_ea3_1', 'pwat_ea4_1', 'pwat_ea5_1'], axis=1)
+
 # Imprimimos el dataframe reducido.
 print(df_reducida)
 
@@ -1100,21 +1105,19 @@ knn_preds_r = scaler_r.inverse_transform(knn_preds_r_n)
 mae_knn_r = mae(y_train_validation_r, knn_preds_r)
 rmse_knn_r = rmse(y_train_validation_r, knn_preds_r)
 
-print(f'\nRMSE: {rmse_knn_r}')
-print(f'MAE: {mae_knn_r}')
+#print(f'\nRMSE: {rmse_knn_r}')
+#print(f'MAE: {mae_knn_r}')
 
 #ajuste de hiperparametros
 print('\n[bold green]Ajuste de hiperparámetros KNN\n---------------------------[/bold green]')
 
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
-    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8],
-    'n_neighbors': [1, 2, 5, 8, 10, 15, 20, 40],
-    #'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+    'n_neighbors': [1, 2, 3, 4, 5, 6],
     'weights': ['uniform', 'distance'],
     'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
-    'leaf_size': [1, 2, 5, 10, 100]
-    #'leaf_size': list(range(1,50))
+    'leaf_size': [1, 2, 5, 10, 20, 30, 40],
+    'p':[1, 2]
 }
 
 # Definimos el modelo.
@@ -1131,12 +1134,18 @@ grid = GridSearchCV(estimator=model,
 # Entrenamos el grid search.
 grid_result = grid.fit(X_train_r_n, y_train_r_n)
 
-# Mejores hiperparámetros.
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
-# Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba normalizados.
-best_model = grid_result.best_estimator_
-y_pred_n = best_model.predict(X_train_validation_r_n)
+# Definir modelo KNN con los mejores hiperparámetros
+model = KNeighborsRegressor(n_neighbors=grid_result.best_params_['n_neighbors'],
+                            weights=grid_result.best_params_['weights'],
+                            p=grid_result.best_params_['p'],
+                            metric=grid_result.best_params_['metric'],
+                            leaf_size=grid_result.best_params_['leaf_size'])
+
+model.fit(X_train_train_r_n, y_train_train_r_n)
+
+y_pred_n = model.predict(X_train_validation_r_n)
 
 # Denormalizar la predicción del modelo.
 y_pred = scaler_r.inverse_transform(y_pred_n)
@@ -1144,11 +1153,11 @@ y_pred = scaler_r.inverse_transform(y_pred_n)
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
 rmse_knn_a_r = rmse(y_train_validation_r, y_pred)
-print(f'\nRMSE ajustado: {rmse_knn_a_r}')
+#print(f'\nRMSE ajustado: {rmse_knn_a_r}')
 
 # Calcular el error absoluto medio en la escala original.
 mae_knn_a_r = mae(y_train_validation_r, y_pred)
-print(f'MAE ajustado: {mae_knn_a_r}')
+#print(f'MAE ajustado: {mae_knn_a_r}')
 
 # Arbol de decisión.
 print('\n[bold green]Árbol de decisión\n------------------[/bold green]')
@@ -1162,8 +1171,8 @@ tree_preds_r = tree_model_r.predict(X_train_validation_r)
 mae_tree_r = mae(y_train_validation_r, tree_preds_r)
 rmse_tree_r = rmse(y_train_validation_r, tree_preds_r)
 
-print(f'\nRMSE: {rmse_tree_r}')
-print(f'MAE: {mae_tree_r}')
+#print(f'\nRMSE: {rmse_tree_r}')
+#print(f'MAE: {mae_tree_r}')
 
 #ajuste de hiperparametros
 print('\n[bold green]Ajuste de hiperparámetros Árbol de decisión\n---------------------------[/bold green]')
@@ -1171,7 +1180,6 @@ print('\n[bold green]Ajuste de hiperparámetros Árbol de decisión\n-----------
 # Definimos el diccionario de los valores de los hiperparámetros que queremos probar.
 param_grid = {
     'max_depth': [1, 2, 5, 8, 10, 15, 20, 40],
-     #'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
     'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10],
     'min_samples_leaf': [1, 2, 5, 8, 10, 15, 20, 40],
 }
@@ -1194,17 +1202,22 @@ grid_result = grid.fit(X_train_r, y_train_r)
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba.
-best_model = grid_result.best_estimator_
-y_pred = best_model.predict(X_train_validation_r)
+model = DecisionTreeRegressor(max_depth=grid_result.best_params_['max_depth'],
+                              min_samples_split=grid_result.best_params_['min_samples_split'],
+                              min_samples_leaf=grid_result.best_params_['min_samples_leaf'])
+
+model.fit(X_train_train_r, y_train_train_r)
+
+y_pred = model.predict(X_train_validation_r)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
 rmse_tree_a_r = rmse(y_train_validation_r, y_pred)
-print(f'\nRMSE ajustado: {rmse_tree_a_r}')
+#print(f'\nRMSE ajustado: {rmse_tree_a_r}')
 
 # Calcular el error absoluto medio en la escala original.
 mae_tree_a_r = mae(y_train_validation_r, y_pred)
-print(f'MAE ajustado: {mae_tree_a_r}')
+#print(f'MAE ajustado: {mae_tree_a_r}')
 
 # Regresión lineal.
 print('\n[bold green]Regresión lineal\n------------------[/bold green]')
@@ -1219,8 +1232,8 @@ linear_preds_r = scaler_r.inverse_transform(linear_preds_r_n)
 mae_linear_r = mae(y_train_validation_r, linear_preds_r)
 rmse_linear_r = rmse(y_train_validation_r, linear_preds_r)
 
-print(f'\nRMSE: {rmse_linear_r}')
-print(f'MAE: {mae_linear_r}')
+#print(f'\nRMSE: {rmse_linear_r}')
+#print(f'MAE: {mae_linear_r}')
 
 #ajuste de hiperparametros
 print('\n[bold green]Ajuste de hiperparámetros Regresión lineal\n---------------------------[/bold green]')
@@ -1248,18 +1261,92 @@ grid_result = grid.fit(X_train_r_n, y_train_r_n)
 print(f'\nMejores hiperparámetros: {grid_result.best_params_}')
 
 # Obtener la mejor configuración de hiperparámetros y hacer una predicción en los datos de prueba.
-best_model = grid_result.best_estimator_
-y_pred = best_model.predict(X_train_validation_r_n)
+model = LinearRegression(fit_intercept=grid_result.best_params_['fit_intercept'],
+                         positive=grid_result.best_params_['positive'])
+
+model.fit(X_train_train_r_n, y_train_train_r_n)
+
+y_pred_n = model.predict(X_train_validation_r_n)
+
+# Desnormalizar las predicciones.
+y_pred = scaler.inverse_transform(y_pred_n)
 
 # Calcular el error cuadrático medio en la escala original.
 # Con scoring="neg_mean_absolute_error" en GridSearch creo que no hace falta.
 rmse_linear_a_r = rmse(y_train_validation_r, y_pred)
-print(f'\nRMSE ajustado: {rmse_linear_a_r}')
+#print(f'\nRMSE ajustado: {rmse_linear_a_r}')
 
 # Calcular el error absoluto medio en la escala original.
 mae_linear_a_r = mae(y_train_validation_r, y_pred)
-print(f'MAE ajustado: {mae_linear_a_r}')
-"""
+#print(f'MAE ajustado: {mae_linear_a_r}')
+
+
+#------------------------------------------------------------
+'''Comparación de los resultados con y sin reducción de la dimensionalidad.'''
+#------------------------------------------------------------
+
+print('[bold red]' + '-' * 60 +'\nComparación de los resultados con y sin reducción de la dimensionalidad.\n' + '-' * 60 + '[/bold red]')
+
+print('[bold blue]KNN\n------------------[/bold blue]')
+
+#print(f'\nRMSE sin reducción de la dimensionalidad sin ajustar: {rmse_knn:.5f}')
+#print(f'MAE sin reducción de la dimensionalidad sin ajustar: {mae_knn:.5f}')
+
+#print(f'\nRMSE con reducción de la dimensionalidad sin ajustar: {rmse_knn_r:.5f}')
+#print(f'MAE con reducción de la dimensionalidad sin ajustar: {mae_knn_r:.5f}')
+
+print('[red]\nRatio rsme_knn_r / rmse_knn: ' + '[/red]' + str(rmse_knn_r / rmse_knn))
+
+print('[red]Ratio mae_knn_r / mae_knn: ' + '[/red]' + str(mae_knn_r / mae_knn))
+
+#print(f'\n RSMSE sin reducción de la dimensionalidad ajustado: {rmse_knn_a:.5f}')
+#print(f'MAE sin reducción de la dimensionalidad ajustado: {mae_knn_a:.5f}')
+
+#print(f'\nRMSE con reducción de la dimensionalidad ajustado: {rmse_knn_a_r:.5f}')
+#print(f'MAE con reducción de la dimensionalidad ajustado: {mae_knn_a_r:.5f}')
+
+print('[red]\nRatio rsme_knn_a_r / rmse_knn_a: ' + '[/red]' + str(rmse_knn_a_r / rmse_knn_a))
+print('[red]Ratio mae_knn_a_r / mae_knn_a: ' + '[/red]' + str(mae_knn_a_r / mae_knn_a))
+
+print('[bold blue]\nÁrbol de decisión\n------------------[/bold blue]')
+
+#print(f'\nRMSE sin reducción de la dimensionalidad sin ajustar: {rmse_tree:.5f}')
+#print(f'MAE sin reducción de la dimensionalidad sin ajustar: {mae_tree:.5f}')
+
+#print(f'\nRMSE con reducción de la dimensionalidad sin ajustar: {rmse_tree_r:.5f}')
+#print(f'MAE con reducción de la dimensionalidad sin ajustar: {mae_tree_r:.5f}')
+
+print('[red]\nRatio rsme_tree_r / rmse_tree: ' + '[/red]' + str(rmse_tree_r / rmse_tree))
+print('[red]Ratio mae_tree_r / mae_tree: ' + '[/red]' + str(mae_tree_r / mae_tree))
+
+#print(f'\n RSMSE sin reducción de la dimensionalidad ajustado: {rmse_tree_a:.5f}')
+#print(f'MAE sin reducción de la dimensionalidad ajustado: {mae_tree_a:.5f}')
+
+#print(f'\nRMSE con reducción de la dimensionalidad ajustado: {rmse_tree_a_r:.5f}')
+#print(f'MAE con reducción de la dimensionalidad ajustado: {mae_tree_a_r:.5f}')
+
+print('[red]\nRatio rsme_tree_a_r / rmse_tree_a: ' + '[/red]' + str(rmse_tree_a_r / rmse_tree_a))
+print('[red]Ratio mae_tree_a_r / mae_tree_a: ' + '[/red]' + str(mae_tree_a_r / mae_tree_a))
+
+print('[bold blue]\nRegresión lineal\n------------------[/bold blue]')
+
+#print(f'\nRMSE sin reducción de la dimensionalidad sin ajustar: {rmse_linear:.5f}')
+#print(f'MAE sin reducción de la dimensionalidad sin ajustar: {mae_linear:.5f}')
+
+#print(f'\nRMSE con reducción de la dimensionalidad sin ajustar: {rmse_linear_r:.5f}')
+#print(f'MAE con reducción de la dimensionalidad sin ajustar: {mae_linear_r:.5f}')
+
+print('[red]\nRatio rsme_linear_r / rmse_linear: ' + '[/red]' + str(rmse_linear_r / rmse_linear))
+print('[red]Ratio mae_linear_r / mae_linear: ' + '[/red]' + str(mae_linear_r / mae_linear))
+
+#print(f'\n RSMSE sin reducción de la dimensionalidad ajustado: {rmse_linear_a:.5f}')
+#print(f'MAE sin reducción de la dimensionalidad ajustado: {mae_linear_a:.5f}')
+
+#print(f'\nRMSE con reducción de la dimensionalidad ajustado: {rmse_linear_a_r:.5f}')
+#print(f'MAE con reducción de la dimensionalidad ajustado: {mae_linear_a_r:.5f}')
+
+print('[red]\nRatio rsme_linear_a_r / rmse_linear_a: ' + '[/red]' + str(rmse_linear_a_r / rmse_linear_a))
+print('[red]Ratio mae_linear_a_r / mae_linear_a: ' + '[/red]' + str(mae_linear_a_r / mae_linear_a))
 
 """
 #------------------------------------------------------------
