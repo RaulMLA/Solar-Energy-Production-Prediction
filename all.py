@@ -741,8 +741,12 @@ print(f'MAE: {mae_knn_rs_a}')
 
 
 # Seleccionamos los menore errores (entre grid search y randomized search).
-rmse_knn_a = min(rmse_knn_gs_a, rmse_knn_rs_a)
 mae_knn_a = min(mae_knn_gs_a, mae_knn_rs_a)
+
+if mae_knn_a == mae_knn_gs_a:
+    rmse_knn_a = rmse_knn_gs_a
+else:
+    rmse_knn_a = rmse_knn_rs_a
 
 
 
@@ -859,8 +863,12 @@ print(f'MAE: {mae_tree_rs_a}\n')
 
 
 # Seleccionamos los menore errores (entre grid search y randomized search).
-rmse_tree_a = min(rmse_tree_gs_a, rmse_tree_rs_a)
 mae_tree_a = min(mae_tree_gs_a, mae_tree_rs_a)
+
+if mae_tree_a == mae_tree_gs_a:
+    rmse_tree_a = rmse_tree_gs_a
+else:
+    rmse_tree_a = rmse_tree_rs_a
 
 
 
@@ -977,10 +985,12 @@ print(f'MAE: {mae_linear_rs_a}\n')
 
 
 # Seleccionamos los menore errores (entre grid search y randomized search).
-rmse_linear_a = min(rmse_linear_gs_a, rmse_linear_rs_a)
 mae_linear_a = min(mae_linear_gs_a, mae_linear_rs_a)
 
-
+if mae_linear_a == mae_linear_gs_a:
+    rsme_linear_a = rmse_linear_gs_a
+else:
+    rsme_linear_a = rmse_linear_rs_a
 
 
 #------------------------------------------------------------
