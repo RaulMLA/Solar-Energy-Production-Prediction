@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 
 # EDA
-#import seaborn as sns
-#import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # División de los datos en entrenamiento y test.
 from sklearn.model_selection import train_test_split
@@ -1606,11 +1606,11 @@ print(f'\nRMSE: {rmse_rf_gs_a}')
 # Ahora, usaremos random search para comparar resultados con grid search.
 print('[yellow]\nRandomized Search[/yellow]\n')
 
-rf_params = {   'n_estimators': [100, 200, 400, 500],
+rf_params_s = {   'n_estimators': [100, 200, 400, 500],
                 'max_depth': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 'min_samples_split': [1, 2, 3],
-                #'min_samples_leaf': [1, 5, 10],
-                'max_features': ['auto', 'sqrt', 'log2'],
+                'min_samples_leaf': [1, 5, 10],
+                #'max_features': ['auto', 'sqrt', 'log2'],
                 #'max_leaf_nodes': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 #'min_impurity_decrease': [0.0, 0.2, 0.4, 0.5, 0.9],
                 'bootstrap': [True, False],
@@ -1621,7 +1621,7 @@ rf_params = {   'n_estimators': [100, 200, 400, 500],
                 }
 
 rf_random = RandomizedSearchCV(estimator=rf_model,
-                                param_distributions=rf_params,
+                                param_distributions=rf_params_s,
                                 n_iter=5,
                                 cv=ps,
                                 scoring='neg_mean_squared_error',
@@ -1671,58 +1671,6 @@ print(f'\nMAE: {mae_rf_a}')
 print(f'\nRMSE: {rmse_rf_a}')
 
 #------------------------------------------------------------
-'''Importancia de variables.'''
-#------------------------------------------------------------
-
-
-print('[bold red]' + '-' * 60 +'\nImportancia de variables.\n' + '-' * 60 + '[/bold red]')
-
-print('\n[bold blue]Random Forests\n---------------[/bold blue]')
-print(f'\nImportancia de variables del modelo Random Forests: {rf_grid.best_estimator_.feature_importances_}')
-
-#PCA 
-random_forest=RandomForestRegressor(n_estimators=500, max_depth=None, bootstrap=True)
-selector = SelectKBest(f_regression)
-
-pipeline = Pipeline([('select', selector), ('random_forest', random_forest)])
-
-param_grid = {'select__k': list(range(1,15))}
-tune_select_rf = GridSearchCV(pipeline,
-                                     param_grid,
-                                     scoring="neg_mean_absolute_error",
-                                     cv=ps
-                                     )
-
-tune_select_rf.fit(X_train, y_train.ravel())
-
-print(tune_select_rf.best_params_, np.sqrt(-tune_select_rf.best_score_))
-
-trained_pipeline = tune_select_rf.best_estimator_
-
-print(f"Features selected: {trained_pipeline.named_steps['select'].get_support()}")
-
-print(f"Locations where features selected: {np.where(trained_pipeline.named_steps['select'].get_support())}")
-
-
-feature_names_before_selection = disp_df.drop('salida', axis=1).columns
-
-print(f"In Scikit-learn 1.x, we can even get the feature names after selection: {trained_pipeline.named_steps['select'].get_feature_names_out(feature_names_before_selection)}")
-
-pprint(list(zip(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])))
-
-'''plt.plot(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])
-plt.ylabel('SCORE')
-plt.xlabel('Number of features')
-#guardar imagen
-plt.savefig('pca.png')
-'''
-
-predictions_test = tune_select_rf.predict(X_train_validation)
-mae_rf_a_r = mae(y_train_validation, predictions_test)
-
-print(f'\nMAE: {mae_rf_a_r}')
-
-#------------------------------------------------------------
 '''Comparación de modelos avanzado y resultados.'''
 #------------------------------------------------------------
 
@@ -1738,6 +1686,188 @@ print(f'\nError absoluto medio del modelo Random Forests: {mae_rf}')
 print(f'\nError cuadrático medio del modelo Random Forests: {rmse_rf}')
 
 print(f'\nRatio de mejora del error absoluto medio del modelo Random Forests: {mae_rf/mae_rf_a}')
+
+
+#------------------------------------------------------------
+'''Importancia de variables.'''
+#------------------------------------------------------------
+
+
+print('[bold red]' + '-' * 60 +'\nImportancia de variables.\n' + '-' * 60 + '[/bold red]')
+
+
+# Matriz de importancia de variables
+print(f'\nImportancia de variables usando Random Forest: {rf_grid.best_estimator_.feature_importances_}')
+
+#PCA 
+rf = RandomForestRegressor(**rf_grid.best_params_)
+selector = SelectKBest(f_regression)
+pipeline = Pipeline([('select', selector), ('random_forest', rf)])
+param_grid = {'select__k': list(range(1,15))}
+
+tune_select_rf = GridSearchCV(pipeline,
+                                     param_grid,
+                                     scoring="neg_mean_absolute_error",
+                                     cv=ps
+                                     )
+
+tune_select_rf.fit(X_train, y_train.ravel())
+
+print(tune_select_rf.best_params_, np.sqrt(-tune_select_rf.best_score_))
+
+trained_pipeline = tune_select_rf.best_estimator_
+
+print(f"Posición de las variables: {np.where(trained_pipeline.named_steps['select'].get_support())}")
+
+feature_names_before_selection = disp_df.drop('salida', axis=1).columns
+
+print(f"Variables seleccionadas: {trained_pipeline.named_steps['select'].get_feature_names_out(feature_names_before_selection)}")
+
+pprint(list(zip(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])))
+
+plt.plot(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])
+plt.ylabel('SCORE')
+plt.xlabel('Number of features')
+#guardar imagen
+plt.savefig('pca.png')
+
+
+mae_rf_r1_a=min(-tune_select_rf.cv_results_['mean_test_score'])
+
+print(f'\nMAE: {mae_rf_r1_a}')
+
+#------------------------------------------------------------
+'''Reducir dimensionalidad.'''
+#------------------------------------------------------------
+print('[bold red]' + '-' * 60 +'\nReducir dimensionalidad.\n' + '-' * 60 + '[/bold red]')
+
+print(f'[bold blue]\nSVMs\n----- [/bold blue]')
+
+svm_r=SVR()
+svm_r.fit(X_train_train_r_n, y_train_train_r_n.ravel())
+
+# Hacer predicciones con los datos de validación
+svm_preds_r = svm_r.predict(X_train_validation_r_n)
+
+# Desnormalizar las predicciones.
+svm_preds_r = scaler.inverse_transform(svm_preds_r.reshape(-1, 1)).ravel()
+
+# Calcular el error cuadrático medio en la escala original.
+mae_svm_r = mae(y_train_validation_r, svm_preds_r)
+print(f'\nMAE: {mae_svm_r}')
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_svm_r = rmse(y_train_validation_r, svm_preds_r)
+print(f'\nRMSE: {rmse_svm_r}')
+
+#ajuste de hiperparámetros
+svm_grid_r = GridSearchCV(SVR(),
+                            param_grid=svm_params,
+                            scoring='neg_mean_absolute_error',
+                            cv=ps,
+                            verbose=1,
+                            n_jobs=-1)
+
+svm_grid_r.fit(X_train_r_n, y_train_r_n.ravel())
+
+model = SVR(**svm_grid_r.best_params_)
+
+model.fit(X_train_train_r_n, y_train_train_r_n.ravel())
+
+# Hacer predicciones con los datos de validación
+svm_preds_r_a = model.predict(X_train_validation_r_n)
+
+# Deshacer la normalización
+svm_preds_r_a = scaler.inverse_transform(svm_preds_r_a.reshape(-1, 1)).ravel()
+
+# Calcular el error cuadrático medio en la escala original.
+mae_svm_r_a = mae(y_train_validation_r, svm_preds_r_a)
+
+print(f'\nMAE: {mae_svm_r_a}')
+
+print(f'[bold blue]\nRandom Forests\n--------------- [/bold blue]')
+
+rf_r=RandomForestRegressor()
+rf_r.fit(X_train_train_r, y_train_train_r.ravel())
+
+# Hacer predicciones con los datos de validación
+rf_preds_r = rf_r.predict(X_train_validation_r)
+
+# Calcular el error cuadrático medio en la escala original.
+mae_rf_r = mae(y_train_validation_r, rf_preds_r)
+print(f'\nMAE: {mae_rf_r}')
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_rf_r = rmse(y_train_validation_r, rf_preds_r)
+print(f'\nRMSE: {rmse_rf_r}')
+
+#ajuste de hiperparámetros
+rf_grid_r = GridSearchCV(RandomForestRegressor(),
+                            param_grid=rf_params,
+                            scoring='neg_mean_absolute_error',
+                            cv=ps,
+                            verbose=1,
+                            n_jobs=-1)
+
+rf_grid_r.fit(X_train_r, y_train_r.ravel())
+
+mae_rf_r2_a = -rf_grid_r.best_score_
+
+print(f'\nMAE: {mae_rf_r2_a}')
+
+#------------------------------------------------------------
+'''Comparativa de resultados modelos avanzados.'''
+#------------------------------------------------------------
+print('[bold red]' + '-' * 60 +'\nComparativa de resultados.\n' + '-' * 60 + '[/bold red]')
+
+print(f'[bold blue]\nSVMs\n----- [/bold blue]')
+
+print(f'\nMAE SVM: {mae_svm}')
+print(f'MAE SVM reducida: {mae_svm_r}')
+print(f'ratio mae_svm/mae_svm_r: {mae_svm/mae_svm_r}')
+
+print(f'\nMAE SVM ajustado: {mae_svm_a}')
+print(f'MAE SVM ajustado reducida: {mae_svm_r_a}')
+print(f'ratio mae_svm_a/mae_svm_r_a: {mae_svm_a/mae_svm_r_a}')
+
+print(f'[bold blue]\nRandom Forests\n--------------- [/bold blue]')
+
+print(f'\nMAE RF: {mae_rf}')
+print(f'\nMAE RF reducida con estrategia anterior: {mae_rf_r}')
+print(f'\nratio mae_rf/mae_rf_r: {mae_rf/mae_rf_r}')
+
+print(f'\nMAE RF ajustado: {mae_rf_a}')
+print(f'\nMAE RF ajustado reducida con PCA: {mae_rf_r1_a}')
+print(f'\nMAE RF ajustado reducida con estrategia anterior: {mae_rf_r2_a}')
+print(f'\nratio mae_rf_a/mae_rf_r2_a: {mae_rf_a/mae_rf_r2_a}')
+print(f'ratio mae_rf_a/mae_rf_r1_a: {mae_rf_a/mae_rf_r1_a}')
+print(f'ratio mae_rf_r1_a/mae_rf_r2_a: {mae_rf_r1_a/mae_rf_r2_a}')
+
+
+#------------------------------------------------------------
+'''MAE de los modelos ajustados.'''
+#------------------------------------------------------------
+print('[bold red]' + '-' * 60 +'\nMAE de los modelos ajustados.\n' + '-' * 60 + '[/bold red]')
+print(f'[bold blue]\nKNN\n----- [/bold blue]')
+print(f'\nMAE KNN: {mae_knn_a}')
+print(f'\nMAE KNN reducido: {mae_knn_a_r}')
+
+print(f'[bold blue]\nÁrbol de decisión\n----- [/bold blue]')
+print(f'\nMAE Árbol de decisión: {mae_tree_a}')
+print(f'\nMAE Árbol de decisión reducido: {mae_tree_a_r}')
+
+print(f'[bold blue]\nRegresión Lineal\n----- [/bold blue]')
+print(f'\nMAE Regresión Lineal: {mae_linear_a}')
+print(f'\nMAE Regresión Lineal reducido: {mae_linear_a_r}')
+
+print(f'[bold blue]\nSVMs\n----- [/bold blue]')
+print(f'\nMAE SVM: {mae_svm_a}')
+print(f'\nMAE SVM reducido: {mae_svm_r_a}')
+
+print(f'[bold blue]\nRandom Forests\n--------------- [/bold blue]')
+print(f'\nMAE RF: {mae_rf_a}')
+print(f'\nMAE RF reducido con PCA: {mae_rf_r1_a}')
+print(f'\nMAE RF reducido con estrategia anterior: {mae_rf_r2_a}')
 
 #------------------------------------------------------------
 '''Modelo final.'''
