@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 
 # EDA
-import seaborn as sns
-import matplotlib.pyplot as plt
+#import seaborn as sns
+#import matplotlib.pyplot as plt
 
 # División de los datos en entrenamiento y test.
 from sklearn.model_selection import train_test_split
@@ -1546,6 +1546,7 @@ print('\n[bold blue]Random Forests\n---------------[/bold blue]')
 
 #ajuste de hiperparametros
 rf_model = RandomForestRegressor()
+
 rf_params = {   'n_estimators': [100, 200, 400, 500],
                 #'n_estimators': [100, 200, 500],
                 #'max_depth': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -1563,17 +1564,108 @@ rf_params = {   'n_estimators': [100, 200, 400, 500],
                 #'max_samples': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                 }
 
-rf_grid = GridSearchCV(rf_model, rf_params, cv=ps, n_jobs=-1, verbose=1)
+rf_grid = GridSearchCV(estimator=rf_model, 
+                       param_grid=rf_params, 
+                       cv=ps, 
+                       scoring='neg_mean_squared_error',
+                       n_jobs=-1, 
+                       verbose=1)
+
+# Entrenamos el grid search
 start = time.time()
 rf_grid.fit(X_train, y_train.ravel())
 end = time.time()
 time_forest_a = end - start
-print(f'Tiempo de entrenamiento: {time_forest_a:.5f} segundos.')
+
+print(f'\nTiempo búsqueda hiperparámetros (Grid Search): {time_forest_a:.5f} segundos.')
+
+# Mejores hiperparámetros
 print("Mejores hiperparámetros:",rf_grid.best_params_)
-rf_preds = rf_grid.predict(X_train_validation)
-#rf_preds = scaler.inverse_transform(rf_preds.reshape(-1,1))
-mae_rf_a = mae(y_train_validation, rf_preds)
-rmse_rf_a = rmse(y_train_validation, rf_preds)
+
+# Definir modelo Random Forests con los mejores hiperparámetros
+model = RandomForestRegressor(**rf_grid.best_params_)
+
+# Entrenar modelo con los mejores hiperparámetros
+start = time.time()
+model.fit(X_train_train, y_train_train.ravel())
+end = time.time()
+time_forest_a = end - start
+print(f'\nTiempo de entrenamiento: {time_forest_a:.5f} segundos.')
+
+# Hacer predicciones con los datos de validación
+rf_preds = model.predict(X_train_validation)
+
+# Calcular el error cuadrático medio en la escala original.
+mae_rf_gs_a = mae(y_train_validation, rf_preds)
+print(f'\nMAE: {mae_rf_gs_a}')
+
+# Calcular el error cuadrático medio en la escala original.
+rmse_rf_gs_a = rmse(y_train_validation, rf_preds)
+print(f'\nRMSE: {rmse_rf_gs_a}')
+
+# Ahora, usaremos random search para comparar resultados con grid search.
+print('[yellow]\nRandomized Search[/yellow]\n')
+
+rf_params = {   'n_estimators': [100, 200, 400, 500],
+                'max_depth': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                'min_samples_split': [1, 2, 3],
+                #'min_samples_leaf': [1, 5, 10],
+                'max_features': ['auto', 'sqrt', 'log2'],
+                #'max_leaf_nodes': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                #'min_impurity_decrease': [0.0, 0.2, 0.4, 0.5, 0.9],
+                'bootstrap': [True, False],
+                #'oob_score': [True, False],
+                #'warm_start': [True, False],
+                #'ccp_alpha': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                #'max_samples': [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                }
+
+rf_random = RandomizedSearchCV(estimator=rf_model,
+                                param_distributions=rf_params,
+                                n_iter=5,
+                                cv=ps,
+                                scoring='neg_mean_squared_error',
+                                n_jobs=-1,
+                                verbose=1)
+
+# Entrenamos el random search
+start = time.time()
+rf_random.fit(X_train, y_train.ravel())
+end = time.time()
+time_forest_b = end - start
+print(f'\nTiempo búsqueda hiperparámetros (Random Search): {time_forest_b:.5f} segundos.')
+
+# Mejores hiperparámetros
+print("Mejores hiperparámetros:",rf_random.best_params_)
+
+# Definir modelo Random Forests con los mejores hiperparámetros
+model = RandomForestRegressor(**rf_random.best_params_)
+
+# Entrenar modelo con los mejores hiperparámetros
+start = time.time()
+model.fit(X_train_train, y_train_train.ravel())
+end = time.time()
+time_forest_b = end - start
+print(f'\nTiempo de entrenamiento: {time_forest_b:.5f} segundos.')
+
+# Hacer predicciones con los datos de validación
+rf_preds = model.predict(X_train_validation)
+
+# Calcular el error cuadrático medio en la escala original.
+mae_rf_rs_a = mae(y_train_validation, rf_preds)
+print(f'\nMAE: {mae_rf_rs_a}')
+
+# Calcular el error cuadrático medio en la escala original. 
+rmse_rf_rs_a = rmse(y_train_validation, rf_preds)
+print(f'\nRMSE: {rmse_rf_rs_a}')
+
+# Seleccionamos los menores errores (entre grid search y random search)
+mae_rf_a = min(mae_rf_gs_a, mae_rf_rs_a)
+
+if mae_rf_a == mae_rf_gs_a:
+    rmse_rf_a=rmse_rf_gs_a
+else:
+    rmse_rf_a=rmse_rf_rs_a
 
 print(f'\nMAE: {mae_rf_a}')
 print(f'\nRMSE: {rmse_rf_a}')
@@ -1618,11 +1710,12 @@ print(f"In Scikit-learn 1.x, we can even get the feature names after selection: 
 
 pprint(list(zip(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])))
 
-plt.plot(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])
+'''plt.plot(tune_select_rf.cv_results_['param_select__k'].data, -tune_select_rf.cv_results_['mean_test_score'])
 plt.ylabel('SCORE')
 plt.xlabel('Number of features')
 #guardar imagen
 plt.savefig('pca.png')
+'''
 
 predictions_test = tune_select_rf.predict(X_train_validation)
 mae_rf_a_r = mae(y_train_validation, predictions_test)
