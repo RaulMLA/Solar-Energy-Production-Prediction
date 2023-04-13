@@ -28,6 +28,9 @@ comp_df = pd.read_csv("comp_st13ns1.txt.bz2",
 # Semilla para la reproducibilidad.
 np.random.seed(13)
 
+
+
+
 # Datos.
 X = disp_df.drop('salida', axis=1)
 
