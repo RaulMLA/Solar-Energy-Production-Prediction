@@ -67,5 +67,8 @@ y_pred_n = model.predict(X_test_n)
 
 y_pred = scaler.inverse_transform(y_pred_n)
 
+# Truncamos los valores negativos a 0.
+y_pred[y_pred < 0] = 0
+
 # Guardamos las predicciones en el fichero predicciones.scv.
 pd.DataFrame(y_pred, index=X_test.index, columns=["salida"]).to_csv("predicciones.csv")
